@@ -1,0 +1,112 @@
+@@
+@@ Guest Assignment Rotator
+@@ For: PennMUSH 1.8.5
+@@ Author: Sketch@M*U*S*H
+@@ Purpose:
+@@  Generally assure that within a reasonable timeframe,
+@@  a guest by the same identity will receive the same name.
+@@
+@@ Default behavior is to map IP addresses to a name from a fixed list of names.
+
+
+@@ @@@@@@@@
+@@ Set up storage room
+@dig/teleport Guest Storage and Processor
+@set here=DARK WIZARD
+@@ @powers are provided only for clarity.
+@power here=debit see_all tport_anything tport_anywhere
+@describe here=When a guest connects here, they are given a new @name and then spit out elsewhere. All @*formats are empty to make the connection and renaming process appear transparent.
+@nameformat here=@@(Nothing)
+@descformat here=@@(Nothing)
+@conformat here=@@(Nothing)
+@exitformat here=@@(Nothing)
+
+
+@@ @@@@@@@@
+@@ Set up guests
+@set me=guestlist:[lsearch(all,type,player,power,guest)]
+@dolist v(guestlist)={@teleport ##=here; @link ##=here}
+@@ The first alias of a guest is to be its placeholder name.
+@dolist v(guestlist)={@alias ##=Guest#@}
+@adisconnect Guest Parent=home
+
+
+@@ @@@@@@@@
+@@ Configuration
+@@ assignments_limit is how many key-value pairs the hash of Guest_Identifiers->Guest_Names can hold.
+@@ assignments_limit must be less than the number of possible guest names, if you're using a fixed list of guest names (I am).
+@@ Also, since PennMUSH will roll over connection descriptors onto Guest1 if you go over the number of created guest characters, this technically should not be larger than max_guests for fixed-list solutions. This is a limitation in PennMUSH, not the code. :D
+&assignments_limit here=config(max_guests)
+@@ Delim_Outer separates key->value pairs, delim_inner separates the key from the value.
+@@ Make sure your keys and values don't contain either.
+&delim_outer here=@
+&delim_inner here=|
+
+
+@@ @@@@@@@@
+@@ Custom Code
+@@ Example 1: Guest names are hashed from IP address to a given name.
+@@ If the same IP address logs in again before the hash entry has expired,
+@@  give them that same name.
+@@ Alter this to alter the Guest_Identifier (key for the hash)
+&make_key here=ipaddr(%0)
+@@ Alter this to alter the Guest_Name, the literal @name this new guest will have.
+&make_name here=ifelse(u(myfun_has_assignment,%0),u(myfun_get_assigned_name,%0),u(myfun_get_unassigned_name,%0))
+&myfun_has_assignment here=t(u(hfun_get_value,u(make_key,%0)))
+&myfun_get_assigned_name here=u(hfun_get_value,u(make_key,%0))
+&myfun_get_unassigned_name here=randword(setdiff(v(namelist),u(hfun_get_all_values,v(delim_outer)),v(delim_outer)),v(delim_outer))
+&namelist here=Orange_Guest@Purple_Guest@Yellow_Guest@Green_Guest@Indigo_Guest@Scarlet_Guest@Blue_Guest
+
+@@ Example 2: Guest names look like totally phony DNA based off their IP address.
+@@ &make_key here=Arbitrary_key[@@(Nothing to store)]
+@@ &make_name here=u(mn_scramble_until_valid,u(make_dna,%0))
+@@ &make_dna here=edit(right(baseconv(left(digest(sha1,ipaddr(%0)),8),16,4),8),0,G,1,A,2,T,3,C)
+@@ @@ We have a problem if two guests have the same IP address;
+@@ @@ They will have the same DNA! In this case, we scramble the name.
+@@ @@ fold() is reduce() in most other languages.
+@@ @@ fold() returns its own result as %0. If %0 is an existing player name, scramble again.
+@@ @@ (8 times should statistically be enough)
+@@ &mn_scramble_until_valid here=ifelse(pmatch(%0),fold(mn_scramble_until_valid_fold,lnum(1,8),%0),%0)
+@@ &mn_scramble_until_valid_fold here=ifelse(pmatch(%0),scramble(%0),%0)
+
+@@ Example 3: Guest names are rotated through a fixed list (like on M*U*S*H)
+@@ @@ If the guest is guest1, rotate ALL guest names. Otherwise, do nothing.
+@@ @@ In this way, every guest that logs in has a name different than the last.
+@@ @@ For this example, the number of guest objects must be equal to or less than the number of words in &namelist.
+@@ &namelist here=Orange_Guest Purple_Guest Yellow_Guest Green_Guest Indigo_Guest Scarlet_Guest
+@@ @dolist get(here/guestlist)={@name ##=elements(get(here/namelist),#@)}
+@@ &make_key here=%0
+@@ &make_name here=ifelse(u(myfun_do_rotation,%0),u(myfun_name_after,name(%0)),name(%0))
+@@ &myfun_do_rotation here=strmatch(%0,pmatch(Guest))
+@@ &myfun_name_after here=elements([v(namelist)] [v(namelist)],inc(member(v(namelist),%0)))
+@@ &after_rename_hook here=@assert u(myfun_do_rotation,%0);@break %qr;think [setq(r,1)][@@(No recursing)]; @dolist remove(v(guestlist),pmatch(Guest))={@include me/inc_assign_name=%i0,fold(myfun_name_after,lnum(1,inum(0)),name(pmatch(Guest)))}
+
+@@ What to do after a player is renamed
+@@ This is a very typical example (with one command commented).
+@@ Change #100 to your Guest Room, OOC Lounge, or whatever you'd like.
+&after_process_hook here=@teleport/silent %0=#100;@@ @cemit/noisy guest=name(%0) has connected.
+
+
+@@ @@@@@@@@
+@@ Execution code
+@set here=guestlist:[lsearch(all,type,player,power,guest)]
+@aconnect here=@assert haspower(%#,guest);@include me/process_guest=%#;@include me/after_process_hook=%#
+
+&process_guest here=@include me/inc_assign_name=%0,u(make_name,%0)
+&inc_assign_name here=@include me/before_rename_hook=%0,%1;@include me/inc_garbage_collect_name=%0,%1;@name %0=%1;@include me/inc_store_assigned_name=%0,%1;@include me/after_rename_hook=%0,%1
+&inc_garbage_collect_name here=@name setr(0,lsearch(all,type,player,power,guest,name,%1))=alias(%q0)
+&inc_store_assigned_name here=@include me/hcmd_replace_keyvalue=u(make_key,%0),%1
+
+
+@@ @@@@@@@@
+@@ Hash code
+@@ Priorities newest entries. If you assign more than &assignments_limit
+@@ key->value pairs, the oldest will be dropped.
+&hcmd_replace_keyvalue here=&assignments me=u(hfun_replace_keyvalue,%0,%1)
+&hfun_replace_keyvalue here=u(hfun_trim_tail,insert(u(hfun_private_remove_keys,%0),-1,strcat(%0,v(delim_inner),%1),v(delim_outer)),u(assignments_limit))
+&hfun_trim_tail here=revwords(extract(revwords(%0,v(delim_outer)),1,%1,v(delim_outer)),v(delim_outer))
+&hfun_private_remove_keys here=ldelete(v(assignments),u(hfun_private_lookup_key,%0),v(delim_outer))
+&hfun_private_lookup_key here=matchall(v(assignments),strcat(%0,v(delim_inner),*),v(delim_outer),%b)
+&hfun_get_value here=rest(elements(v(assignments),last(u(hfun_private_lookup_key,%0)),v(delim_outer)),v(delim_inner))
+&hfun_get_all_values here=map(hfun_private_get_all_values_map,v(assignments),v(delim_outer))
+&hfun_private_get_all_values_map here=rest(%0,v(delim_inner))
