@@ -1,17 +1,20 @@
 @@
-@@ Guest Assignment Rotator
+@@ Guest Identity Mapper
 @@ For: PennMUSH 1.8.5
 @@ Author: Sketch@M*U*S*H
 @@ Purpose:
-@@  Generally assure that within a reasonable timeframe,
-@@  a guest by the same identity will receive the same name.
+@@  Providing a system for managing the names that Guests that connect
+@@  to a MUSH will receive.
 @@
-@@ Default behavior is to map IP addresses to a name from a fixed list of names.
+@@ Three examples are given:
+@@  1) Track the last several connections from unique IP addresses, and map their IPs to names.
+@@  2) Use arbitrary information (IP address) of a guest to generate a unique name.
+@@  3) Rotate the names of all guests on the MUSH through a list of names.
 
 
 @@ @@@@@@@@
 @@ Set up storage room
-@dig/teleport Guest Storage and Processor
+@dig/teleport Guest Storage and Name Mapper
 @set here=DARK WIZARD
 @@ @powers are provided only for clarity.
 @power here=debit see_all tport_anything tport_anywhere
@@ -53,7 +56,8 @@
 @@ Alter this to alter the Guest_Name, the literal @name this new guest will have.
 &make_name here=ifelse(u(myfun_has_assignment,%0),u(myfun_get_assigned_name,%0),u(myfun_get_unassigned_name,%0))
 &myfun_has_assignment here=t(u(hfun_get_value,u(make_key,%0)))
-&myfun_get_assigned_name here=u(hfun_get_value,u(make_key,%0))
+&myfun_get_assigned_name here=u(myfun_uniqify,u(hfun_get_value,u(make_key,%0)))
+&myfun_uniqify here=switch(conn(pmatch(%0)),>-1,u(myfun_uniqify,inc(%0)[@@(A cheap PennMUSH trick)]),%0)
 &myfun_get_unassigned_name here=randword(setdiff(v(namelist),u(hfun_get_all_values,v(delim_outer)),v(delim_outer)),v(delim_outer))
 &namelist here=Orange_Guest@Purple_Guest@Yellow_Guest@Green_Guest@Indigo_Guest@Scarlet_Guest@Blue_Guest
 
