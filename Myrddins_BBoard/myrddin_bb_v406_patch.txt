@@ -1,0 +1,30 @@
+@@ Cosmetic and performance patches for PennMUSH installations of Myrddin's BBoard System.
+@@ Author: Sketch@M*U*S*H
+@@ Note: This code assumes you are inside the main bboard system object.
+
+@@ @@@@@@@@@@ @@
+@@ Cosmetics: @@
+@@ @@@@@@@@@@ @@
+
+@@ Cleanup "0.0\% capacity" cosmetic bug.
+@edit here/**=\\% capacity,\% capacity
+
+@@ Add years to recorded dates
+&BBTIME bbpocket=[elements(time(),1 2 3 5)]
+
+
+@@ @@@@@@@@@@@@ @@
+@@ Performance: @@
+@@ @@@@@@@@@@@@ @@
+
+@@ PennMUSH-Only token-to-substitution safety cleanup
+@edit bbpocket/**=##,%i0
+@edit here/**=##,#i0
+
+@@ PennmUSH-Only: Use baseconv() in place of manual base36 conversions.
+&ADDEM bbpocket
+&B36_DIGITS bbpocket
+&B35_POWS bbpocket
+&FN_B36_MAGS bbpocket
+&FN_B36-TO-B10 bbpocket=baseconv(%0,36,10)
+&FN_B10-TO-B36 bbpocket=baseconv(%0,10,36)
