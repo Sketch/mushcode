@@ -15,12 +15,12 @@
 &FN_GET_LOCATIONS where=iter(%1,ifelse(findable(%0,%i0),loc(%i0),#-1))
 &FN_STRIP_TRAILING_WHITESPACE where=regeditall(%0,\\s+(%r|$),$1)
 
-@@ Box style
+@@ Box style appearance
+&DISPLAY_LOCATION Where=align(1. <28 42 1.,|,left(ansi(w,name(%1)),32),table(iter(sort(%2,name),name(%i0),%b,|),15,sub(width(%0),33),|,%b),|)
 &FOOTER Where=`[repeat(-,73)]'
 &HEADER Where=,-[ljust(Player Location,29,-)][ljust(Players,43,-)].
-&DISPLAY_LOCATION Where=align(1. <28 42 1.,|,left(ansi(w,name(%1)),32),table(iter(sort(%2,name),name(%i0),%b,|),15,sub(width(%0),33),|,%b),|)
 
-@@ Pointy style
+@@ Pointy style appearance
 &DISPLAY_LOCATION where=align(<32 [sub(width(%0),33)],left(%b[ansi(w,name(%1))],32),table(iter(sort(%2,name),name(%i0),%b,|),15,sub(width(%0),33),|,%b))
 &FOOTER Where=u(row)
 &HEADER Where=center(ansi(hw,Player Locations),78)%r[u(row,Players,Location)]
