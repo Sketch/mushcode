@@ -1,0 +1,57 @@
+@@ Playstatus
+@@ Author: Sketch@M*U*S*H
+@@ Allow players to set their playstatus (IC/OOC/AFK) with the +ps command and shortcuts.
+@@ New statuses are easy to build and restrict. @DESCRIBE has details on how.
+
+@create Playstatus
+@link Playstatus = #2
+@lock/Command Playstatus=!POWER^GUEST
+&COMMAND_LOCK`FAILURE Playstatus=Guests are not allowed to do that.
+@lset Playstatus/Command=no_inherit
+@set Playstatus = WIZARD
+@DESCRIBE Playstatus=lit(This handles everything related to playstatuses and +ps. PS_NAME makes a status of NAME with a message of the attribute body. If PS_NAME_LOCK evaluates to true, %0 can become that status. PS_NAME_CMD is an action list that is run after the user enters the status. In all cases, %0 is the target, %1 is the status, %2 is the enactor.)
+
+&CMD_PS Playstatus=$^\+ps ([^=]+)$:@include me/set_with_checks=%#,%1,%#
+&CMD_PS_OTHER Playstatus=$^\+ps ([^=]+)=(.*)$:@assert hasflag(%#,Wizard)={@nspemit %#=You are not allowed to do that.};@assert setr(0,pmatch(%1))={@nspemit %#=switch(%q0,#-1,Player not found.,#-2,Ambiguous player name,@@(Player found))};@include me/set_with_checks=%q0,%2,%#;@nspemit %#=You set [name(%q0)]'s status to [ansi(u(color,%2),ucstr(%2))].
+
+&SET_WITH_CHECKS Playstatus=@assert hasattr(me,PS_%1)={@nspemit %2=No such status!}; @assert udefault(me/PS_%1_LOCK,1,%0,%1,%2)={@nspemit %2=You are not allowed to do that.}; @include me/set_without_checks=%0,%1,%2
+&SET_WITHOUT_CHECKS Playstatus=&playstatus %0=[ucstr(%1)];@nsremit loc(%0)=name(%0) [u(PS_%1)];@include me/PS_%1_CMDS=%0,%1,%#
+
+@set Playstatus/CMD_PS=regexp
+@set Playstatus/CMD_PS_OTHER=regexp
+
+@@ Custom stuff below here.
+
+&CMD_AFK Playstatus=$AFK:@include me/set_with_checks=%#,AFK,%#
+&CMD_IC Playstatus=$IC:@include me/set_with_checks=%#,IC,%#
+&CMD_OOC Playstatus=$OOC:@include me/set_with_checks=%#,OOC,%#
+
+&COLOR Playstatus=switch(%0,#-*,%0,#*,default(PS_[get(%0/Playstatus)]_COLOR,n),default(PS_%0_COLOR,n))
+
+&TYPICAL Playstatus=goes [ansi(u(color,after(%0,/PS_)),after(%0,/PS_))].
+&PS_AFK Playstatus=u(typical,%=)
+&PS_AFK_COLOR Playstatus=b
+&PS_AFK_CMDS Playstatus=@include/nobreak me/off_duty=%0
+&PS_IC Playstatus=u(typical,%=)
+&PS_IC_COLOR Playstatus=hg
+&PS_IC_CMDS Playstatus=@include/nobreak me/off_duty=%0
+&PS_GOD_COLOR Playstatus=hw
+&PS_OOC Playstatus=u(typical,%=)
+&PS_OOC_COLOR Playstatus=hc
+&PS_OOC_CMDS Playstatus=@include/nobreak me/off_duty=%0
+&PS_NPC Playstatus=is now an [ansi(u(color,NPC),NPC)]
+&PS_NPC_COLOR Playstatus=hc
+&PS_NPC_CMDS Playstatus=@include/nobreak me/off_duty=%0
+&PS_NPC_LOCK Playstatus=hasflag(%2,Wizard)
+&PS_TP Playstatus=sets themself ready for a [ansi(u(color,TP),TP)]
+&PS_TP_COLOR Playstatus=hm
+&PS_TP_CMDS Playstatus=@include/nobreak me/off_duty=%0
+&PS_TP_LOCK Playstatus=hasflag(%2,Wizard)
+&PS_WIZ Playstatus=u(typical,%=)
+&PS_WIZ_COLOR Playstatus=+gold1
+&PS_WIZ_LOCK Playstatus=hasflag(%2,Wizard)
+&PS_WIZ_CMDS Playstatus=@include/nobreak me/on_duty=%0
+
+&ON_DUTY Playstatus=@break strmatch(get(%0/onduty),Off);@nsremit loc(%0)=name(%0) goes on-duty.;&onduty %0=Off
+&OFF_DUTY Playstatus=@break strmatch(get(%0/onduty),On);@nsremit loc(%0)=name(%0) goes off-duty.;&onduty %0=On
+

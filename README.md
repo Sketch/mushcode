@@ -8,4 +8,6 @@ guest\_identity: Change the names of guests when they connect, based on custom m
 
 Myrddins\_BBoard: Performance and cosmetic improvements to Myrddin's BBoard System.
 
+playstatus: Allow players to set their playstatus (IC/OOC/AFK) with the +ps command and shortcuts. New statuses are easy to build and restrict, and can have side-effects (like a Wizard being set off-duty when IC).
+
 where: A simple +where that sorts by unique location. The appearance is easily altered.
