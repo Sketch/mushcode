@@ -1,0 +1,28 @@
+@@ Template for a +Where
+@@ Groups players by location, respecting findability.
+@@ Alter &FOOTER, &HEADER, and &DISPLAY_LOCATION to alter appearance.
+@@ Display_location is called for every unique location. %0 is the enactor, %1 is the location name, %2 is the player list for that location.
+@@ Respects findable()ity.
+@@ FN_STRIP_TRAILING_WHITESPACE strips whitespace from the end of each line so more useful text will fit in the buffer.
+
+@create Where
+@power Where=see_all can_spoof
+@set Where=!no_command
+&CMD_WHERE Where=$^\+?where:@nspemit/silent %#=[u(header)]%r[u(fn_do_display,%#)]%r[u(footer)]
+@set Where/cmd_where=regexp
+&DISPLAY Where=u(fn_strip_trailing_whitespace,map(#lambda/u(display_location,%0,\%0,elements(%1,matchall(%2,\%0))),unique(sort(%2,name)),%b,%r))
+&FN_DO_DISPLAY where=u(display,%0,lwho(%0),u(fn_get_locations,%0,lwho(%0)))
+&FN_GET_LOCATIONS where=iter(%1,ifelse(findable(%0,%i0),loc(%i0),#-1))
+&FN_STRIP_TRAILING_WHITESPACE where=regeditall(%0,\\s+(%r|$),$1)
+
+@@ Box style
+&FOOTER Where=`[repeat(-,73)]'
+&HEADER Where=,-[ljust(Player Location,29,-)][ljust(Players,43,-)].
+&DISPLAY_LOCATION Where=align(1. <28 42 1.,|,left(ansi(w,name(%1)),32),table(iter(sort(%2,name),name(%i0),%b,|),15,sub(width(%0),33),|,%b),|)
+
+@@ Pointy style
+&DISPLAY_LOCATION where=align(<32 [sub(width(%0),33)],left(%b[ansi(w,name(%1))],32),table(iter(sort(%2,name),name(%i0),%b,|),15,sub(width(%0),33),|,%b))
+&FOOTER Where=u(row)
+&HEADER Where=center(ansi(hw,Player Locations),78)%r[u(row,Players,Location)]
+&ROW Where=ansi(n,<>[ljust(ansi(g,%1),sub(36,ceil(fdiv(strlen(%0),2))),>)][ljust(ifelse(%0,ansi(g,%0),:),add(37,ceil(fdiv(strlen(%0),2))),<)]<>)
+

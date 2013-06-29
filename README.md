@@ -4,3 +4,4 @@ MUSHCode is a Lisp-like language to control objects in a virtual MUSH environmen
 
 guest\_identity: Change the names of guests when they connect, based on custom mappings. Examples are given to bind guest names to IP addresses, produce pseudo-random names, and rotate through a fixed list (like on M\*U\*S\*H).
 
+where: A simple +where that sorts by unique location. The appearance is easily altered.
