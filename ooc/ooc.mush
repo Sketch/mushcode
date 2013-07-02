@@ -1,0 +1,11 @@
+@@ A simple +ooc command
+@@ Author: Sketch@M*U*S*H
+
+@create OOC
+@power OOC = Can_spoof
+&DESCRIBE OOC=The OOC command.
+&OOC OOC=$^\+?ooc ([\:;"])?(.*)$:@nsremit %L=<OOC> %n[switch(%1,:,%b%2,;,%2,",%bsays\, "%2",%bsays\, "%2")]
+@set OOC/OOC=regexp
+
+@@ Version that uses &OOCCOLOR on players to determine bracket color (first item) and inner OOC color (second item).
+&OOC OOC=$^\+?ooc ([\:;"]?)(.*)$:@nsremit %L=edit(mix(#apply2/ansi,elements(default(%#/ooccolor,- -),switch(words(default(%#/ooccolor,- -)),1,1 1 1 1 1,2,1 2 2 2 1)),< O O C >),%b,) %n[switch(%1,:,%b%2,\;,%2,%bsays\, "%2")] 

@@ -8,6 +8,8 @@ MUSHCode is a Lisp-like language to control objects in a virtual MUSH environmen
 
 *Myrddins\_BBoard*: Performance and cosmetic improvements to Myrddin's BBoard System.
 
+*ooc*: A simple +ooc command for room-local out-of-character communication.
+
 *playstatus*: Allow players to set their playstatus (IC/OOC/AFK) with the +ps command and shortcuts. New statuses are easy to build and restrict, and can have side-effects (like a Wizard being set off-duty when IC).
 
 *where*: A simple +where that sorts by unique location. The appearance is easily altered.
