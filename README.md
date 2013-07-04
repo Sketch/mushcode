@@ -6,7 +6,7 @@ MUSHCode is a Lisp-like language to control objects in a virtual MUSH environmen
 
 *guest\_identity*: Change the names of guests when they connect, based on custom mappings. Examples are given to bind guest names to IP addresses, produce pseudo-random names, and rotate through a fixed list (like on M\*U\*S\*H).
 
-*Myrddins\_BBoard*: Performance and cosmetic improvements to Myrddin's BBoard System.
+*Myrddins\_BBoard*: Performance and cosmetic improvements to Myrddin's BBoard System. Currently, a mirror of Myrddin's BBS can be found here: [http://myrddin.annelions.com/](http://myrddin.annelions.com/)
 
 *ooc*: A simple +ooc command for room-local out-of-character communication.
 
