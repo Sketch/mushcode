@@ -1,73 +1,85 @@
-&BACKTRACK_TREE Pathfinder=ifelse(isdbref(first(%1)),u(backtrack_tree,%0,cat(u(get_parent,%0,first(%1),%2),%1),dec(%2)),%1)
-@@ BACKTRACK_TREE: Recursively travel up the spanning tree until the location is the starting location.
+@@ Pathfinder
+@@ Author: Sketch@M*U*S*H
+@@ A u() to find the shortest path from a list of starting rooms to a destination room ("target").
+@@ Description of how the code works is in the @describe below.
+@@ The HELPER_FUNCTION section defines a number of functions likely to be used in typical use-cases of this code.
+@@ Let me know if this documentation is bad.
 
-@DESCRIBE Pathfinder=This code is made to find the shortest path from a list of jump points on a grid to a single destination. This object is to be used as a part of other code, and has no commands of its own. Uses a breadth-first search to find the shortest path from a list of 'Point A's to a 'Point B'. Works in any group of standard rooms with standard exits (no master/zone/dynamic exits). Made by Sketch@M*U*S*H. Bug reports, patches, and suggestions welcome.%r%r'Do' is the function to call. The second argument is the DBRef to pathfind to. The first argument is a list of tuples that take the form "DBREF:TEXT", which are the starting points. If a path is found, the output will start with the 'TEXT' portion of the tuple that began the path, followed by list of room DBRefs that lead to the destination. The text is arbitrary, but must contain no spaces or punctuation. The EXAMPLE attribute is printed here, as an example of how to call DO:%r>>%r[v(EXAMPLE)]%r<<%r%rSome helper functions have been defined for convenience: GET_EXIT_FROM0TO1 returns the exit leading from \%0 to \%1.%r%r%rCall tree: Do -> pathfind_init -> (*)pathfind -> generate tree -> (Loop: Found_target?  no-> generate_tree(expand))  ... ... (*)pathfind -> Reduce_tree -> backtrack(get_final_location) -> (loop: backtrack_tree(get_parent))
+@describe Pathfinder=This code is made to find the shortest path from a list of jump points on a grid to a single destination. This object is to be used as a part of other code, and has no commands of its own. Uses a breadth-first search to find the shortest path from a list of 'Point A's to a 'Point B'. Works in any group of standard rooms with standard exits (no master/zone/dynamic exits). Made by Sketch@M*U*S*H. Bug reports, patches, and suggestions welcome.%r%r'Do' is the function to call. The first argument is a list of origin points (DBRef:WORD pairs), the second is the name of a Target Function (described later) ufun on the Pathfinder, the third is an arbitrary string used for the target function, the fourth (optional) is the dbref of the object seeking a path (uses %%# if none given).%rIf a path is found, the output will start with the 'WORD' portion of the tuple of the origin point that began the path, followed by list of room DBRefs that lead to the destination. The WORD is arbitrary, but must contain no spaces or punctuation.%rTarget Functions are called to determine if the pathfinder has found the target. The Target Function is passed: \%0 - TARGET(User-given string)  \%1 - Searcher's DBRef  \%2 - Q-Register list  \%3 - Current Q-register name. Q-Registers contain a list of ROOMs, then a list of ROOM:PREV_ROOM pairs: "(ROOM_DBRef)s | (ROOM_DBRef:PREV_DBref)s". Calls to the Target Function that  return a DBRef from the Current Q-Register or an integer (of an element in the list) are considered successful, but code carefully: During the tree-building section of the pathfinder, any true value can be returned, while the tree-walking section requires it to return the aforementioned.%r%rThe EXAMPLE attribute is printed here, as an example of how to call DO. For an example of the data structures used in the pathfinder, try running EXAMPLE_PRINTOUT.%r&EXAMPLE:>>%r[v(EXAMPLE)]%r<<%r%rSome helper functions have been defined for convenience:%rGET_EXIT_FROM0TO1 returns the exit leading from room \%0 to room \%1, given as dbrefs.%rGET_VALID_EXIT_FROM0TO1 same as above, but with a third argument that is a searcher with which to check locks.%r%rSpecial note: Although the pathfinder does respect locks on exits, but the exits must be able to see the attributes they need to check. In short, those attributes must be @set VISUAL and not @set NEARBY.
 
-@set Pathfinder/DESCRIBE=no_command visual prefixmatch public nearby
+&LIST_VALID_ADJACENT_ROOMS Pathfinder=map(#lambda/loc(\%0),filter(#lambda/elock(\%0,[num(%1)]),lexits(%0)))
+&LIST_ADJACENT_ROOMS Pathfinder=map(#lambda/loc(\%0),lexits(%0))
+&LIST_VALID_ADJACENT_NODES Pathfinder=map(#lambda/loc(\%0):[secure(%0)],filter(#lambda/elock(\%0,[num(%1)]),lexits(%0)))
+@@ This commented version ignores locks on rooms.
+@@ &LIST_VALID_ADJACENT_NODES Pathfinder=map(#lambda/loc(\%0):[secure(%0)],lexits(%0))
+@@ &LIST_ADJACENT_NODES Pathfinder=map(#lambda/loc(\%0):[secure(%0)],lexits(%0))
 
-&DO Pathfinder=u(pathfind_init,%0,%1) [@@(Call this with %0=LIST, %1=TARGET)]
-@@ DO: The second argument is the DBRef to pathfind to. The first argument is a list of tuples that take the form "DBREF:TEXT".
 
-&EXAMPLE Pathfinder=u(DO,#0:OMPHALOS #1628:LAKESIDE,#4145) [@@(On M*U*S*H, start at Omphalos Park and the Lakeside Pasture, and find the shortest path to The Golden Ducat. Returns: OMPHALOS #0 #2232 #2633 #4145)]
+@@ ifelse(visible(%#,switch(%3,*/*,%3,me/%3)),
+@@ %0=TARGET_FUNCTION, %1=TARGET, %2=SEARCHER_DBREF
+@@ Returns something like FOUND 3 2 1 0 on success, on failure: #-1 y x w v u t s...
+@@ If "FOUND" begins the list, the rest represents the q-registers that will be read when backtracking the tree (in WALK_TREE).
+/newcat
+&BUILD_TREE Pathfinder=
+if(u(me/[secure(last(%0,/))],%1,num(%2),,0),FOUND 0[@@(We're already there!)],[@@(Loop...)]
+[fold(#lambda/
+ifelse(\%1,
+switch(first(\%0),FOUND,\%0,
+setq(\%1,letq(z,u(remove_all_invalids,iter(first(r(first(\%0)),|),u(list_adjacent_nodes,\%i0,[num(%2)])),\%0),u(extract_rooms,\%qz)|\%qz))
+\[if(u(me/[secure(last(%0,/))],[decompose(%1)],[num(%2)],\%0,\%1),FOUND \%1,\%1)\] \%0
+)
+,\%0)
+,1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p q r s t u v w x y #-1,0)]
+)
+.
 
-&EXPAND Pathfinder=cat(%0,u(remove_invalid,u(expand_list,%0,%1,inc(%2)),u(extract_locations,%0)))
-@@ EXPAND: Expands the spanning tree by concatenating the current locations with those adjacent. &EXPAND_LIST generates a list of locations adjacent to the outermost locations. &REMOVE_INVALID removes all but one path to a given location, and all locations already in the tree.
+&BUILD_TREE Pathfinder=if(u(me/[secure(last(%0,/))],%1,num(%2),,0),FOUND 0[@@(We're already there!)],[@@(Loop...)][fold(#lambda/ifelse(\%1,switch(first(\%0),FOUND,\%0,setq(\%1,letq(z,u(remove_all_invalids,iter(first(r(first(\%0)),|),u(list_adjacent_nodes,\%i0,[num(%2)])),\%0),u(extract_rooms,\%qz)|\%qz))\[if(u(me/[secure(last(%0,/))],[decompose(%1)],[num(%2)],\%0,\%1),FOUND \%1,\%1)\] \%0),\%0),1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p q r s t u v w x y #-1,0)])
 
-&EXPAND_LIST Pathfinder=iter(u(extract_locations,graball(%0,*:*:[dec(%2)])),u(list_adjacent_rooms,%i0,:%i0:%2))
-@@ EXPAND_LIST: This generates and returns a list of rooms adjacent to the outermost group of locations in the list, even rooms already IN the list!
+@@
 
-&EXTRACT_LOCATIONS Pathfinder=regeditall(%0,v(tuple),$1)
+@@ %0 - Room:Parent list.  %1 - Register List
+&REMOVE_ALL_INVALIDS pathfinder=switch(%0,,,munge(#lambda/u(REMOVE_ALL_INVALIDS_MUNGE,\%0,[secure(%1)]),u(extract_rooms,%0),%0))
+&REMOVE_ALL_INVALIDS_MUNGE pathfinder=fold(REMOVE_ALL_INVALIDS_FOLD,%1,%0)
+&REMOVE_ALL_INVALIDS_FOLD pathfinder=setdiff(%0,first(r(%1),|),%b,d)
 
-&FOUND_TARGET Pathfinder=t(match(%0,%1:*:*))
-@@ FOUND_TARGET: Returns true if the list (%0) contains the target DBRef (%1).
+&EXTRACT_ROOMS Pathfinder=regeditall(%0,v(tuple),$1)
+&TUPLE Pathfinder=([^\s:]+):([^\s:]+)
 
-&GENERATE_TREE Pathfinder=ifelse(u(found_target,%0,%1),%2 %0,u(generate_tree,u(expand,%0,%1,%2),%1,inc(%2)))
-@@ GENERATE_TREE: Recursively generate a spanning tree of the grid, until the target location is in the tree or the recursion limit is exceeded.
+@@ %0 - Register list (FOUND 3 2 1 0)  %1 - Target Function  %2  - Target  %3 - Searcher DBREF
+@@ Returns a list of rooms from one of the beginning points to the target.
+&WALK_TREE Pathfinder=fold(walk_tree_fold,rest(%0),u(walk_tree_get_first_room,%1,%2,%3,%0,first(rest(%0))))
+&WALK_TREE_FOLD Pathfinder=[rest(grab(rest(r(%1),|),first(%0):*),:)] %0
+@@ %0 - Target_Function  %1 - Target  %2 - Searcher_DBREF  %3 - Register List  %4 - Current Register
+&WALK_TREE_GET_FIRST_ROOM Pathfinder=switch(u(me/[secure(last(%0,/))],%1,%2,%3,%4),#*,secure(#$),extract(first(r(%4),|),secure(#$),1))
 
-&GET_EXIT_FROM0TO1 Pathfinder=filter(#lambda/strmatch(loc(\%0),%1),lexits(%0))
+&TARGET_ROOM Pathfinder=member(first(r(%3),|),%0)
+@@ Typically you'll want to target a room, but you can target rooms owned by someone, or something arbitrary like a Thing.
+@@ &TARGET_THING Pathfinder=iter(first(r(%3),|),%0)
+@@ &TARGET_ROOM_OWNER Pathfinder=member(iter(first(r(%3),|),owner(%i0)),%0)
+
+
+
+&EXAMPLE Pathfinder=u(do_unlocalized,#0:OMPHALOS #1628:LAKESIDE,TARGET_ROOM,#4145,%#) [@@(On M*U*S*H, start at Omphalos Park and the Lakeside Pasture, and find the shortest path to The Golden Ducat, using yourself as the searcher. You must have a @DESC and @SEX set due to the lock on The Golden Ducat's entrance. Returns: OMPHALOS #0 #2232 #2633 #4145)]
+
+&EXAMPLE_PRINTOUT Pathfinder=u(me/example)%r[iter(0 1 2 3 4,LEVEL %i0: [first(r(%i0),|)]%rLEVEL %i0 PAIRS: [rest(r(%i0),|)],%b,%r)]%rFunction invocations: [first(%?)]
+
+&DO Pathfinder=[@@(Call this with %0=ORIGIN_LIST, %1=TARGET_FUNCTION, %2=TARGET, %3=SEARCHER_DBREF)][localize(switch(%+,3,u(do_unlocalized,%0,%1,%2,%#),4,u(do_unlocalized,%0,%1,%2,%3),#-1 NEED 3 OR 4 ARGUMENTS))]
+
+&DO_UNLOCALIZED Pathfinder=u(pathfind_init,%0,%1,%2,%3)
+
+&PATHFIND_INIT Pathfinder=setq(0,u(extract_rooms,%0)|%0)[u(pathfind,%1,%2,%3)]
+
+@@ %0=TARGET_FUNCTION, %1=TARGET, %2=SEARCHER_DBREF
+&PATHFIND Pathfinder=switch(u(build_tree,%0,%1,%2),#-1 *,#$,FOUND *,u(walk_tree,#$,%0,%1,%2),#-1 NO PATH FOUND)
+
+&VERSION Pathfinder=2.0.0
+
+@@ HELPER FUNCTIONS
+
 @@ GET_EXIT_FROM0TO1: This takes two locations as arguments and returns the exit that links %0 to %1. This is a function to help ease coding an output formatter.
+&GET_EXIT_FROM0TO1 Pathfinder=filter(#lambda/strmatch(loc(\%0),[num(%1)]),lexits(%0))
 
-&GET_FINAL_LOCATION Pathfinder=first(u(get_final_tuple,%0,%1,%2),:)
-@@ GET_FINAL_TUPLE:
+@@ Same as GET_EXIT_FROM0TO1, but respects locks. Pass the searcher as %2. The code uses #0 as the searcher if none is given.
+&GET_VALID_EXIT_FROM0TO1 Pathfinder=filter(#lambda/strmatch(loc(\%0),[num(%1)]),filter(#lambda/elock(\%0,[switch(%+,3,num(%2),#0)]),lexits(%0)))
 
-&GET_FINAL_TUPLE Pathfinder=regrab(%0,\(?:[edit(%1,%b,|)]\):\[^:\]+:%2\\b)
-
-
-&GET_PARENT Pathfinder=elements(grab(%0,%1:*:%2),2,:)
-
-&LIST_ADJACENT_ROOMS Pathfinder=map(#lambda/loc(\%0)[if(%1,%1)],iter(%0,lexits(%i0)))
-
-&PATHFIND Pathfinder=switch(u(generate_tree,%0,%1,0),#-1*,#$,u(reduce_tree,rest(#$),%1,first(#$)))
-
-&PATHFIND_INIT Pathfinder=u(pathfind,iter(%0,%i0:0),%1,0)
-@@ PATHFIND_INIT: This alters the input from &DO by adding the 'depth' counter to each tuple of the list. Since they're all starting points, their depths are 0.
-
-&REMOVE_INVALID Pathfinder=munge(#lambda/setdiff(\%0,%1),u(extract_locations,%0),%0)
-@@ REMOVE_INVALID: This is particularly dense code, and probably isn't portable due to how it uses munge(). See: &EXPAND
-
-&REDUCE_TREE Pathfinder=u(backtrack_tree,%0,u(get_final_location,%0,%1,%2),%2)
-
-&TUPLE Pathfinder=(#[-\d]+):([^:]+):\d+
-@@ TUPLE: A regexp to match a DBRef, arbitrary text/dbref, and a number that represents search depth. Named: LOCATION:PARENT:DEPTH
-
-&VERSION Pathfinder=1.4.1
-@@ VERSION: Quite arbitrary indeed.
-
-@@ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Changes:
-
-v1.1 Vastly improved the 'REMOVE_INVALID' code
-v1.2 Sensically renamed the function attributes.
-v1.4 Plans for this version were to correctly report function recursion limit errors properly. It turns out this naturally happens.
-v1.4.1 Documentation that doesn't suck.
-
-Bugs: Doesn't take into account the buffer limit, which could certainly be exceeded when there are enough rooms. I haven't found a problem for paths less than 5 rooms long.
-
-Note on recursion:
-It seems that any recursion depth that BACKTRACK_TREE will reach, GENERATE_TREE would reach first. By design, GENERATE_TREE returns #-1 FUNCTION RECURSION LIMIT EXCEEDED if it reaches the recursion limit; I'll leave it up to the implementation to decide how to handle an error so extreme as that--it seems unlikely to occur on any reasonably-sized grid with many warp points. If you manage to trigger some odd recursion bug, please replace the following four attributes, set the pathfinder DEBUG, and send me the log of the triggering function call.
-
-@@ For the curious: "A" means Generation portion, "B" means backtracking portion. S means Shallow and D means Deep.
-&BACKTRACK_TREE Pathfinder=[pemit(%#,B*-S INV/DEPTH %? - Length/Word: [strlen(%0)] [words(%0)])][ifelse(isdbref(first(%1)),u(backtrack_tree,%0,cat(u(get_parent,%0,first(%1),%2),%1),dec(%2)),%1)]
-&EXTRACT_LOCATIONS Pathfinder=regeditall(%0,v(tuple),$1)[pemit(%#,A*-D INV/DEPTH %? - Length/Word: [strlen(%0)] [words(%0)])]
-&GENERATE_TREE Pathfinder=[pemit(%#,A*-S INV/DEPTH %? - Length/Word: [strlen(%0)] [words(%0)])][ifelse(u(found_target,%0,%1),%2 %0,u(generate_tree,u(expand,%0,%1,%2),%1,inc(%2)))]
-&GET_PARENT Pathfinder=elements(grab(%0,%1:*:%2),2,:)[pemit(%#,B*-D INV/DEPTH %? - Length/Word: [strlen(%0)] [words(%0)])]
+&EXAMPLE_IS_PUBLIC_ROOM Pathfinder=switch(%0,#0,1,switch(setr(0,u(DO,num(%0):THERE,TARGET_ROOM,#0)),THERE *,eq(words(filterbool(#lambda/\%0,step(get_valid_exit_from0to1,rest(revwords(rest(iter(rest(%q0),%i0 %i0)))),2))),sub(words(%q0),2)),0))[@@(Pathfind to a public room (#0), then find if the starting room can be accessed by walking from that room without passing any locks)]
