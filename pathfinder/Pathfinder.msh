@@ -1,3 +1,10 @@
+@@ This code is made to find the shortest path from a list of jump points on a grid to a single destination.
+@@ 'Do' is the function to call. The second argument is the DBRef to pathfind to. The first argument is a list of tuples that take the form "DBREF:TEXT", which are the starting points. If a path is found, the output will start with the 'TEXT' portion of the tuple with the DBRef that begins the path. The text is arbitrary, but must contain no spaces or punctuation.
+
+@@ Bugs: Doesn't take into account the buffer limit, which could certainly be exceeded when there are enough rooms. I haven't found a problem for paths less than 5 rooms long. Recursion limits could also be a problem. Haven't analyzed exactly how much. Also, the code expects success from its recursive functions, which is just bad.
+
+@@ Todo: Write error-handling code. Check recursion limits/failure to find path.
+
 &BACKTRACK_NODES Pathfinder=ifelse(isdbref(first(%1)),u(backtrack_nodes,%0,cat(u(backtrack_source,%0,first(%1),%2),%1),dec(%2)),%1)
 
 &BACKTRACK_SOURCE Pathfinder=elements(grab(%0,%1:*:%2),2,:)
@@ -7,16 +14,23 @@
 @set Pathfinder/DESCRIBE=no_command visual prefixmatch public nearby
 
 &DO Pathfinder=u(pathfind_init,%0,%1) [@@(Call this with %0=LIST, %1=TARGET)]
+@@ DO: The second argument is the DBRef to pathfind to. The first argument is a list of tuples that take the form "DBREF:TEXT".
+
+&EXAMPLE Pathfinder=u(DO,#0:OMPHALOS #1628:LAKESIDE,#4145) [@@(On M*U*S*H, start at Omphalos Park and the Lakeside Pasture, and find the shortest path to The Golden Ducat.)]
 
 &EXPAND Pathfinder=cat(%0,u(remove_invalid,u(expand_list,%0,%1,inc(%2)),u(extract_destinations,%0)))
+@@ EXPAND: Passes a crudely expanded list and the Location components of the non-expanded list to &REMOVE_INVALID, which will return a list of tuples which have unique Location components that aren't part of the List already. Then concatenates the &REMOVE_INVALID result with the existing List.
+@@ EXPAND: Expands the spanning tree by concatenating the current locations with those adjacent. &EXPAND_LIST generates a list of locations adjacent to the outermost locations. &REMOVE_INVALID removes all but one path to a given location, and all locations already in the tree.
 
 &EXPAND_LIST Pathfinder=iter(u(extract_destinations,graball(%0,*:*:[dec(%2)])),u(list_adjacent_rooms,%i0,:%i0:%2))
+@@ EXPAND_LIST: This returns a list of rooms adjacent to the outermost group of rooms in the list, even rooms already IN the list!
 
 &EXTRACT_DESTINATIONS Pathfinder=regeditall(%0,v(tuple),$1)
 
 &EXTRACT_SOURCES Pathfinder=regeditall(%0,v(tuple),$2)
 
 &FOUND_TARGET Pathfinder=t(match(%0,%1:*:*))
+@@ FOUND_TARGET: Returns true if the list (%0) contains the target DBRef (%1).
 
 &GET_EXIT_FROM0TO1 Pathfinder=filter(#lambda/strmatch(loc(\%0),%1),lexits(%0))
 
@@ -26,22 +40,21 @@
 
 &LIST_ADJACENT_ROOMS Pathfinder=map(#lambda/loc(\%0)[if(%1,%1)],iter(%0,lexits(%i0)))
 
-&OLD_REMOVE_INVALID Pathfinder=filter(#lambda/not(match(%1,before(\%0,:))),munge(#lambda/setunion(\%0,),u(extract_destinations,%0),%0))
-
 &PATHFIND Pathfinder=switch(u(span,%0,%1,0),#-1*,#$,u(reduce_path,rest(#$),%1,first(#$)))
 
 &PATHFIND_INIT Pathfinder=u(pathfind,iter(%0,%i0:0),%1,0)
+@@ PATHFIND_INIT: This alters the input from &DO by adding the 'depth' counter to each tuple of the list. Since they're all starting points, their depths are 0.
 
 &REDUCE_PATH Pathfinder=u(backtrack_nodes,%0,u(get_final_dbref,%0,%1,%2),%2)
 
 &REMOVE_INVALID Pathfinder=munge(#lambda/setdiff(\%0,%1),u(extract_destinations,%0),%0)
+@@ REMOVE_INVALID: This is particularly dense code, and probably isn't portable due to how it uses munge(). See: &EXPAND
 
 &SPAN Pathfinder=ifelse(u(found_target,%0,%1),%2 %0,u(span,u(expand,%0,%1,%2),%1,inc(%2)))
-
-&TEST1 Pathfinder=u(expand,#0:START:0 #159:START:0)
-
-&TEST2 Pathfinder=u(pathfind,#0:START:0,#10477)
+@@ SPAN: Recursively generate a spanning tree of the grid, until the target location is in the tree or the recursion limit is exceeded.
 
 &TUPLE Pathfinder=(#[-\d]+):([^:]+):\d+
+@@ TUPLE: A regexp to match a DBRef, arbitrary text/dbref, and a number that represents search depth. Named: LOCATION:PARENT:DEPTH
 
-&VERSION Pathfinder=1.1
+&VERSION Pathfinder=1.2
+@@ VERSION: Quite arbitrary indeed.
