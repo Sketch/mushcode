@@ -52,3 +52,22 @@
 
 &VERSION Pathfinder=1.4.1
 @@ VERSION: Quite arbitrary indeed.
+
+@@ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Changes:
+
+v1.1 Vastly improved the 'REMOVE_INVALID' code
+v1.2 Sensically renamed the function attributes.
+v1.4 Plans for this version were to correctly report function recursion limit errors properly. It turns out this naturally happens.
+v1.4.1 Documentation that doesn't suck.
+
+Bugs: Doesn't take into account the buffer limit, which could certainly be exceeded when there are enough rooms. I haven't found a problem for paths less than 5 rooms long.
+
+Note on recursion:
+It seems that any recursion depth that BACKTRACK_TREE will reach, GENERATE_TREE would reach first. By design, GENERATE_TREE returns #-1 FUNCTION RECURSION LIMIT EXCEEDED if it reaches the recursion limit; I'll leave it up to the implementation to decide how to handle an error so extreme as that--it seems unlikely to occur on any reasonably-sized grid with many warp points. If you manage to trigger some odd recursion bug, please replace the following four attributes, set the pathfinder DEBUG, and send me the log of the triggering function call.
+
+@@ For the curious: "A" means Generation portion, "B" means backtracking portion. S means Shallow and D means Deep.
+&BACKTRACK_TREE Pathfinder=[pemit(%#,B*-S INV/DEPTH %? - Length/Word: [strlen(%0)] [words(%0)])][ifelse(isdbref(first(%1)),u(backtrack_tree,%0,cat(u(get_parent,%0,first(%1),%2),%1),dec(%2)),%1)]
+&EXTRACT_LOCATIONS Pathfinder=regeditall(%0,v(tuple),$1)[pemit(%#,A*-D INV/DEPTH %? - Length/Word: [strlen(%0)] [words(%0)])]
+&GENERATE_TREE Pathfinder=[pemit(%#,A*-S INV/DEPTH %? - Length/Word: [strlen(%0)] [words(%0)])][ifelse(u(found_target,%0,%1),%2 %0,u(generate_tree,u(expand,%0,%1,%2),%1,inc(%2)))]
+&GET_PARENT Pathfinder=elements(grab(%0,%1:*:%2),2,:)[pemit(%#,B*-D INV/DEPTH %? - Length/Word: [strlen(%0)] [words(%0)])]
