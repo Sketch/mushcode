@@ -1,16 +1,14 @@
-@@ This code is made to find the shortest path from a list of jump points on a grid to a single destination.
-@@ 'Do' is the function to call. The second argument is the DBRef to pathfind to. The first argument is a list of tuples that take the form "DBREF:TEXT", which are the starting points. If a path is found, the output will start with the 'TEXT' portion of the tuple with the DBRef that begins the path. The text is arbitrary, but must contain no spaces or punctuation.
-
 &BACKTRACK_TREE Pathfinder=ifelse(isdbref(first(%1)),u(backtrack_tree,%0,cat(u(get_parent,%0,first(%1),%2),%1),dec(%2)),%1)
 @@ BACKTRACK_TREE: Recursively travel up the spanning tree until the location is the starting location.
 
-@DESCRIBE Pathfinder=Uses a breadth-first search to find the shortest path from a list of 'Point A's to a 'Point B'. Works in any group of standard rooms with standard exits (no master/zone/dynamic exits). Made by Sketch@M*U*S*H. Free to use, but please ask before you do so I can keep track of where the code is distributed in case it breaks horribly. Bug reports, patches, and suggestions welcome.
+@DESCRIBE Pathfinder=This code is made to find the shortest path from a list of jump points on a grid to a single destination. This object is to be used as a part of other code, and has no commands of its own. Uses a breadth-first search to find the shortest path from a list of 'Point A's to a 'Point B'. Works in any group of standard rooms with standard exits (no master/zone/dynamic exits). Made by Sketch@M*U*S*H. Bug reports, patches, and suggestions welcome.%r%r'Do' is the function to call. The second argument is the DBRef to pathfind to. The first argument is a list of tuples that take the form "DBREF:TEXT", which are the starting points. If a path is found, the output will start with the 'TEXT' portion of the tuple that began the path, followed by list of room DBRefs that lead to the destination. The text is arbitrary, but must contain no spaces or punctuation. The EXAMPLE attribute is printed here, as an example of how to call DO:%r>>%r[v(EXAMPLE)]%r<<%r%rSome helper functions have been defined for convenience: GET_EXIT_FROM0TO1 returns the exit leading from \%0 to \%1.%r%r%rCall tree: Do -> pathfind_init -> (*)pathfind -> generate tree -> (Loop: Found_target?  no-> generate_tree(expand))  ... ... (*)pathfind -> Reduce_tree -> backtrack(get_final_location) -> (loop: backtrack_tree(get_parent))
+
 @set Pathfinder/DESCRIBE=no_command visual prefixmatch public nearby
 
 &DO Pathfinder=u(pathfind_init,%0,%1) [@@(Call this with %0=LIST, %1=TARGET)]
 @@ DO: The second argument is the DBRef to pathfind to. The first argument is a list of tuples that take the form "DBREF:TEXT".
 
-&EXAMPLE Pathfinder=u(DO,#0:OMPHALOS #1628:LAKESIDE,#4145) [@@(On M*U*S*H, start at Omphalos Park and the Lakeside Pasture, and find the shortest path to The Golden Ducat.)]
+&EXAMPLE Pathfinder=u(DO,#0:OMPHALOS #1628:LAKESIDE,#4145) [@@(On M*U*S*H, start at Omphalos Park and the Lakeside Pasture, and find the shortest path to The Golden Ducat. Returns: OMPHALOS #0 #2232 #2633 #4145)]
 
 &EXPAND Pathfinder=cat(%0,u(remove_invalid,u(expand_list,%0,%1,inc(%2)),u(extract_locations,%0)))
 @@ EXPAND: Expands the spanning tree by concatenating the current locations with those adjacent. &EXPAND_LIST generates a list of locations adjacent to the outermost locations. &REMOVE_INVALID removes all but one path to a given location, and all locations already in the tree.
@@ -52,5 +50,5 @@
 &TUPLE Pathfinder=(#[-\d]+):([^:]+):\d+
 @@ TUPLE: A regexp to match a DBRef, arbitrary text/dbref, and a number that represents search depth. Named: LOCATION:PARENT:DEPTH
 
-&VERSION Pathfinder=1.4
+&VERSION Pathfinder=1.4.1
 @@ VERSION: Quite arbitrary indeed.
