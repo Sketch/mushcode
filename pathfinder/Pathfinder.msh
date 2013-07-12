@@ -82,4 +82,5 @@ setq(\%1,letq(z,u(remove_all_invalids,iter(first(r(first(\%0)),|),u(list_adjacen
 @@ Same as GET_EXIT_FROM0TO1, but respects locks. Pass the searcher as %2. The code uses #0 as the searcher if none is given.
 &GET_VALID_EXIT_FROM0TO1 Pathfinder=filter(#lambda/strmatch(loc(\%0),[num(%1)]),filter(#lambda/elock(\%0,[switch(%+,3,num(%2),#0)]),lexits(%0)))
 
+@@ The comment is in the code
 &EXAMPLE_IS_PUBLIC_ROOM Pathfinder=switch(%0,#0,1,switch(setr(0,u(DO,num(%0):THERE,TARGET_ROOM,#0)),THERE *,eq(words(filterbool(#lambda/\%0,step(get_valid_exit_from0to1,rest(revwords(rest(iter(rest(%q0),%i0 %i0)))),2))),sub(words(%q0),2)),0))[@@(Pathfind to a public room (#0), then find if the starting room can be accessed by walking from that room without passing any locks)]
