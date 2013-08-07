@@ -17,5 +17,5 @@
 &FUN`ERR`NO_ICLOC OOCC=You haven't used this command on the IC grid yet.
 &FUN`ERR`ROOM_DESTROYED OOCC=The room you were at has been destroyed.%b%bSorry!
 
-&OOCC Old Teleporting Commands=$oocc: ;@select/inline t(member([u(data_OOC_Room)] [u(data_OOC_lounge)],%L))=0,{&ICLOC %#=objid(%L);+PS %#=OOC;@teleport %#=u(data_OOC_Lounge)} ,1,{@assert hasattrval(%#,icloc)={@nspemit %#=letq(0,Fun`Err`No_ICLoc,u(Fun`Format_Message,u(%q0),%q0,%#))};@assert isdbref(get(%#/icloc))={@nspemit %#=letq(0,Fun`Err`Room_Destroyed,u(Fun`Format_Message,u(%q0),%q0,%#))};@teleport %#=get(%#/icloc);@wipe %#/ICLoc}
+&OOCC OOCC=$oocc:@select/inline t(member([u(data_OOC_Room)] [u(data_OOC_lounge)],%L))=0,{&ICLOC %#=objid(%L);+PS %#=OOC;@teleport %#=u(data_OOC_Lounge)} ,1,{@assert hasattrval(%#,icloc)={@nspemit %#=letq(0,Fun`Err`No_ICLoc,u(Fun`Format_Message,u(%q0),%q0,%#))};@assert isdbref(get(%#/icloc))={@nspemit %#=letq(0,Fun`Err`Room_Destroyed,u(Fun`Format_Message,u(%q0),%q0,%#))};@teleport %#=get(%#/icloc);@wipe %#/ICLoc}
 
