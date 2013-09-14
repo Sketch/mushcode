@@ -43,11 +43,10 @@
 @@ Tests
 &test_runner TypicalWho=@dolist unique(map(sniplast,lattr(me/test`*)))={@nspemit %#=%i0: [ansi(switch(u(test_runner_call,%i0),1,hg,0,hr),%rEXP [v(%i0_expected)]%rGOT [u(u(sniplast,after(%i0,TEST`)),v(%i0_input))])]}
 &test_runner_call TypicalWho=eq(0,comp(v(%0_expected),u(u(sniplast,after(%0,TEST`)),v(%0_input)),I))
+&sniplast TypicalWho=revwords(rest(revwords(%0,_),_),_)
 &test`construct_who_line_1_input TypicalWho=>20 &species
 &test`construct_who_line_1_expected TypicalWho=[rjust(udefault(me/display_&species,get(%0/species),get(%0/species),%0,%1),20)]
 &test`construct_who_line_2_input TypicalWho=-30 _
 &test`construct_who_line_2_expected TypicalWho=[space(30)]
 &test`construct_who_line_3_input TypicalWho=<16 @name|>12 &species
 &test`construct_who_line_3_expected TypicalWho=[ljust(udefault(me/display_@name,name(%0),name(%0),%0,%1),16)][rjust(udefault(me/display_&species,get(%0/species),get(%0/species),%0,%1),12)]
-
-&sniplast TypicalWho=revwords(rest(revwords(%0,_),_),_)
