@@ -14,6 +14,8 @@ MUSHCode is a Lisp-like language to control objects in a virtual MUSH environmen
 
 * oocc: A simple teleportation command that takes a player on or off a defined IC grid.
 
+* typical\_who: An easily alterable online player listing. Designed for rapidly prototyping +who appearance.
+
 * pathfinder: [library] A functional, breadth-first pathfinder. Can be used in code such as teleportation and map systems, for giving directions.
 
 * playstatus: Allow players to set their playstatus (IC/OOC/AFK) with the +ps command and shortcuts. New statuses are easy to build and restrict, and can have side-effects (like a Wizard being set off-duty when IC).

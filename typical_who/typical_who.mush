@@ -1,0 +1,53 @@
+@@ Typical +Who
+@@ Author: Sketch@M*U*S*H
+@@ Purpose:
+@@  Provide an easily altered +who to rapidly prototype and deploy on new MUSHes.
+
+@create TypicalWho
+@power TypicalWho=see_all can_spoof
+@set TypicalWho=!no_command
+
+&config_rebuild_each_time TypicalWho=1
+&config_format_line TypicalWho=>16 @name|>26 &species|-7 Fspacetime
+&INC_Debug_Rebuild TypicalWho=@assert v(config_rebuild_each_time);@include me/INC_Rebuild
+&INC_Rebuild TypicalWho=&who_line me=[u(construct_who_line,v(config_format_line))]
+
+&+who TypicalWho=$+who:@include me/who
+&who TypicalWho=$who:@include/nobreak me/INC_Debug_Rebuild;@include me/before;@nspemit %#=u(do_header);@nspemit %#=u(do_body,lwho(%#));@nspemit %#=u(do_footer);@include me/after
+
+
+@@ Display +who
+&do_header TypicalWho=header
+&do_body TypicalWho=map(who_line,%0,%b,%r)
+&do_footer TypicalWho=footer
+
+@@ Build +who
+&construct_who_line TypicalWho=map(construct_who_line_map,%0,|,@@(No space))
+&construct_who_line_map TypicalWho=u(construct_who_format_variables,%0,u(construct_who_format_base,%0))
+
+&construct_who_format_base TypicalWho=switch(rest(%0),&*,v(format_attribute),@*,v(format_builtin),F*,v(format_custom),_,v(format_space),#-1 forgot symbol like @ or & or F)
+
+&construct_who_format_variables TypicalWho=edit(%1,<item>,rest(%0),<itemnosymbol>,u(strrest,rest(%0)),<alignment>,case(left(%0,1),<,ljust,>,rjust,-,center,#-1),<width>,u(strrest,first(%0)))
+
+&strrest TypicalWho=mid(%0,1,8192)
+
+@@ <item>: item does contain prefix (like "&race")
+@@ <itemnosymbol>: item does not contain prefix (like "race")
+@@ <alignment>: ljust center rjust
+@@ <width>: a positive integer
+&format_attribute TypicalWho=[<alignment>(udefault(me/display_<item>,get(%0/<itemnosymbol>),get(%0/<itemnosymbol>),%0,%1),<width>)]
+&format_builtin TypicalWho=[<alignment>(udefault(me/display_<item>,<itemnosymbol>(%0),<itemnosymbol>(%0),%0,%1),<width>)]
+&format_custom TypicalWho=[<alignment>(u(me/display_<item>,@@(Nothing),%0,%1),<width>)]
+&format_space TypicalWho=[space(<width>)]
+
+@@ Tests
+&test_runner TypicalWho=@dolist unique(map(sniplast,lattr(me/test`*)))={@nspemit %#=%i0: [ansi(switch(u(test_runner_call,%i0),1,hg,0,hr),%rEXP [v(%i0_expected)]%rGOT [u(u(sniplast,after(%i0,TEST`)),v(%i0_input))])]}
+&test_runner_call TypicalWho=eq(0,comp(v(%0_expected),u(u(sniplast,after(%0,TEST`)),v(%0_input)),I))
+&test`construct_who_line_1_input TypicalWho=>20 &species
+&test`construct_who_line_1_expected TypicalWho=[rjust(udefault(me/display_&species,get(%0/species),get(%0/species),%0,%1),20)]
+&test`construct_who_line_2_input TypicalWho=-30 _
+&test`construct_who_line_2_expected TypicalWho=[space(30)]
+&test`construct_who_line_3_input TypicalWho=<16 @name|>12 &species
+&test`construct_who_line_3_expected TypicalWho=[ljust(udefault(me/display_@name,name(%0),name(%0),%0,%1),16)][rjust(udefault(me/display_&species,get(%0/species),get(%0/species),%0,%1),12)]
+
+&sniplast TypicalWho=revwords(rest(revwords(%0,_),_),_)
