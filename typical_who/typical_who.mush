@@ -25,7 +25,7 @@
 &construct_who_line TypicalWho=map(construct_who_line_map,%0,|,@@(No space))
 &construct_who_line_map TypicalWho=u(construct_who_format_variables,%0,u(construct_who_format_base,%0))
 
-&construct_who_format_base TypicalWho=switch(rest(%0),&*,v(format_attribute),@*,v(format_builtin),F*,v(format_custom),_,v(format_space),#-1 forgot symbol like @ or & or F)
+&construct_who_format_base TypicalWho=switch(rest(%0),&*,v(format_attribute),@*,v(format_builtin),F*,v(format_custom),D*,v(format_decoration),_,v(format_space),#-1 forgot symbol like @ or & or F)
 
 &construct_who_format_variables TypicalWho=edit(%1,<item>,rest(%0),<itemnosymbol>,u(strrest,rest(%0)),<alignment>,case(left(%0,1),<,ljust,>,rjust,-,center,#-1),<width>,u(strrest,first(%0)))
 
@@ -39,6 +39,7 @@
 &format_builtin TypicalWho=[<alignment>(udefault(me/display_<item>,<itemnosymbol>(%0),<itemnosymbol>(%0),%0,%1),<width>)]
 &format_custom TypicalWho=[<alignment>(u(me/display_<item>,@@(Nothing),%0,%1),<width>)]
 &format_space TypicalWho=[space(<width>)]
+&format_decoration TypicalWho=[<alignment>(<itemnosymbol>,<width>)]
 
 @@ Tests
 &test_runner TypicalWho=@dolist unique(map(sniplast,lattr(me/test`*)))={@nspemit %#=%i0: [ansi(switch(u(test_runner_call,%i0),1,hg,0,hr),%rEXP [v(%i0_expected)]%rGOT [u(u(sniplast,after(%i0,TEST`)),v(%i0_input))])]}
@@ -50,3 +51,7 @@
 &test`construct_who_line_2_expected TypicalWho=[space(30)]
 &test`construct_who_line_3_input TypicalWho=<16 @name|>12 &species
 &test`construct_who_line_3_expected TypicalWho=[ljust(udefault(me/display_@name,name(%0),name(%0),%0,%1),16)][rjust(udefault(me/display_&species,get(%0/species),get(%0/species),%0,%1),12)]
+&test`construct_who_line_4_input TypicalWho=>0 Dv(raw[]code)
+&test`construct_who_line_4_expected TypicalWho=[rjust(v(raw[]code),0)]
+
+
