@@ -18,7 +18,7 @@
 
 @@ Display +who
 &do_header TypicalWho=header
-&do_body TypicalWho=map(who_line,%0,%b,%r)
+&do_body TypicalWho=map(#lambda/u(who_line,[@@(Shift Registers)],\%0,\%1),%0,%b,%r)
 &do_footer TypicalWho=footer
 
 @@ Build +who
@@ -35,9 +35,9 @@
 @@ <itemnosymbol>: item does not contain prefix (like "race")
 @@ <alignment>: ljust center rjust
 @@ <width>: a positive integer
-&format_attribute TypicalWho=[<alignment>(udefault(me/display_<item>,get(%0/<itemnosymbol>),get(%0/<itemnosymbol>),%0,%1),<width>)]
-&format_builtin TypicalWho=[<alignment>(udefault(me/display_<item>,<itemnosymbol>(%0),<itemnosymbol>(%0),%0,%1),<width>)]
-&format_custom TypicalWho=[<alignment>(u(me/display_<item>,@@(Nothing),%0,%1),<width>)]
+&format_attribute TypicalWho=[<alignment>(udefault(me/display_<item>,get(%1/<itemnosymbol>),get(%1/<itemnosymbol>),%1,%2),<width>)]
+&format_builtin TypicalWho=[<alignment>(udefault(me/display_<item>,<itemnosymbol>(%1),<itemnosymbol>(%1),%1,%2),<width>)]
+&format_custom TypicalWho=[<alignment>(u(me/display_<item>,@@(Nothing),%1,%2),<width>)]
 &format_space TypicalWho=[space(<width>)]
 &format_decoration TypicalWho=[<alignment>(<itemnosymbol>,<width>)]
 
@@ -46,11 +46,11 @@
 &test_runner_call TypicalWho=eq(0,comp(v(%0_expected),u(u(sniplast,after(%0,TEST`)),v(%0_input)),I))
 &sniplast TypicalWho=revwords(rest(revwords(%0,_),_),_)
 &test`construct_who_line_1_input TypicalWho=>20 &species
-&test`construct_who_line_1_expected TypicalWho=[rjust(udefault(me/display_&species,get(%0/species),get(%0/species),%0,%1),20)]
+&test`construct_who_line_1_expected TypicalWho=[rjust(udefault(me/display_&species,get(%1/species),get(%1/species),%1,%2),20)]
 &test`construct_who_line_2_input TypicalWho=-30 _
 &test`construct_who_line_2_expected TypicalWho=[space(30)]
 &test`construct_who_line_3_input TypicalWho=<16 @name|>12 &species
-&test`construct_who_line_3_expected TypicalWho=[ljust(udefault(me/display_@name,name(%0),name(%0),%0,%1),16)][rjust(udefault(me/display_&species,get(%0/species),get(%0/species),%0,%1),12)]
+&test`construct_who_line_3_expected TypicalWho=[ljust(udefault(me/display_@name,name(%1),name(%1),%1,%2),16)][rjust(udefault(me/display_&species,get(%1/species),get(%1/species),%1,%2),12)]
 &test`construct_who_line_4_input TypicalWho=>0 Dv(raw[]code)
 &test`construct_who_line_4_expected TypicalWho=[rjust(v(raw[]code),0)]
 
