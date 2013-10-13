@@ -19,7 +19,7 @@
 
 @@ PennMUSH-Only token-to-substitution safety cleanup
 @edit bbpocket/**=##,%i0
-@edit here/**=##,#i0
+@edit here/**=##,%i0
 
 @@ PennmUSH-Only: Use baseconv() in place of manual base36 conversions.
 &ADDEM bbpocket
