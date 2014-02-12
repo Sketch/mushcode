@@ -37,10 +37,11 @@ setq(\%1,letq(z,u(remove_all_invalids,iter(first(r(first(\%0)),|),u(list_adjacen
 
 @@
 
-@@ %0 - Room:Parent list.  %1 - Register List
-&REMOVE_ALL_INVALIDS pathfinder=switch(%0,,,munge(#lambda/u(REMOVE_ALL_INVALIDS_MUNGE,\%0,[secure(%1)]),u(extract_rooms,%0),%0))
-&REMOVE_ALL_INVALIDS_MUNGE pathfinder=fold(REMOVE_ALL_INVALIDS_FOLD,%1,%0)
-&REMOVE_ALL_INVALIDS_FOLD pathfinder=setdiff(%0,first(r(%1),|),%b,d)
+@@ Remove all rooms from %0 that have already been visited.
+@@ %0 - Room:Parent tuple list.  %1 - Register List
+&REMOVE_ALL_VISITED pathfinder=switch(%0,,,munge(#lambda/u(REMOVE_ALL_VISITED_MUNGE,\%0,[secure(%1)]),u(extract_rooms,%0),%0))
+&REMOVE_ALL_VISITED_MUNGE pathfinder=fold(REMOVE_ALL_VISITED_FOLD,%1,%0)
+&REMOVE_ALL_VISITED_FOLD pathfinder=setdiff(%0,first(r(%1),|),%b,d)
 
 &EXTRACT_ROOMS Pathfinder=regeditall(%0,v(tuple),$1)
 &TUPLE Pathfinder=([^\s:]+):([^\s:]+)
