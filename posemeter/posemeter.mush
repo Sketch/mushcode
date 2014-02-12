@@ -1,0 +1,61 @@
+@@ Posemeter
+@@ Author: Sketch@M*U*S*H
+@@ Purpose:
+@@  Passively observe roleplay taking place on the MUSH and perform actions,
+@@  the primary purpose being awarding points/EXP for roleplaying.
+@@
+@@ Create side-effect functions hook_record, hook_tick, and hook_point
+@@ to take actions.
+
+@@ ******** PoseMeter ********
+
+@@ Make objects
+@create PoseMeter
+@create PoseMeterData
+@force me={@vd PoseMeter=[num(PoseMeterData)]}
+
+@@ If say, pose, semipose, and @emit are already hooked on
+@@ @hook/before and @hook/after, just call capture_hook from
+@@ one of those hooks.
+@startup PoseMeter=@dolist say pose semipose @emit={@hook/after ##=%!,capture_hook}
+@describe PoseMeter=A transluscent ball with a clock and a bunch of meters and tubes inside it.
+
+&capture_hook PoseMeter=u(capture_hook_do,%#,%L,%c)
+
+&capture_hook_do PoseMeter=u(hook_record,[u(capture_hook_qset,%0,%1,%2)][letq(4,u(remove_tokens_except_arg1_SIDEFX,lvplayers(%ql),%qc),letq(0,u(check_rules),ifelse(%q0,u(do_tick,%qc,%qp,%qt,%ql),%q0)) %q4)])
+
+&capture_hook_qset PoseMeter=setq(c,%0,p,u(get_player,%0),l,%1,t,switch(first(%2),POSE,%n%b[rest(%2)],SEMIPOSE,%n[rest(%2)],SAY,%n says\, "[rest(%2)]",@EMIT,rest(%2),case(left(%2,1),:,%n%b[after(%2,:)],;,%n[after(%2,;)],",%n says\, "[after(%2,")]",\\,after(%2,\\),ansi(hr,#-1 LOOK AT THIS FATAL ERROR))))
+@@ " This comment fixes Vim syntax highlighting.
+
+
+&check_rules PoseMeter=if(u(is_player_unfrozen,%qp),if(cand(u(is_post_long_enough,%qt),not(u(is_character_tokened,%qc)),u(is_character_IC,%qc),not(u(is_player_alone,lvplayers(%ql),%qc)),not(u(is_character_in_own_room,%ql,%qc)),u(is_public_room,%ql)),RULES SUCCEED!,#-1 RULE FAILED),#-1 PLAYER_ID %QP CURRENTLY LOCKED)
+
+&is_player_unfrozen PoseMeter=if(hasattr(%VD,frozen`%0),switch(get(%VD/frozen`%0),LOCKED,0,<[secs()],1,0),1)
+&is_character_IC PoseMeter=member(IC TP LRP,get(%0/playstatus))
+&is_player_alone PoseMeter=lt(words(setdiff(map(get_player,filter(is_character_IC,%0)),u(get_player,%1))),1)
+&is_character_tokened PoseMeter=hasattr(%VD,token`%0)
+&is_post_long_enough PoseMeter=gt(strlen(%0),50)
+&is_character_in_own_room PoseMeter=cand(strmatch(owner(%1),%0),strmatch(name(%1),*[name(%0)]*))
+@@ PATHFINDER: #7252
+&is_public_room PoseMeter=u(#7252/is_public_room,%0)
+
+
+&remove_tokens_except_arg1_SIDEFX PoseMeter=letq(p,u(get_player,%1),iter(filter(remove_tokens_except_arg1_filter,%0),attrib_set(%VD/TOKEN`%i0)CLEARTOKEN:%i0))
+&remove_tokens_except_arg1_filter PoseMeter=neq(u(get_player,%0),%qp)
+
+
+&frozen PoseData=Indexed by PLAYER_ID. When [secs()] > value, a meter is unfrozen. Set a player's frozen to LOCKED if they are banned from PoseMeter.
+&tick PoseData=Indexed by Character DBREf. SECS VALUE LOC STRLEN WORDS
+&token PoseData=Warning!! HUGE attribute tree!! A Character with a token gets no tick for posing.
+
+
+&do_tick_args Posemeter=@@ %0 - Character  %1 - Player  %2 - Text  %3 - Location
+&do_tick PoseMeter=letq(0,u(update_ticker,%0,%1,%2,%3),ifelse(gte(fold(#lambda/add(\%0,elements(\%1,2)),%q0,0,|),v(var_ticks_per_rp)),[@@(POINT)][attrib_set(%VD/TICKS`%0)][attrib_set(%VD/frozen`%1,add(v(var_freeze_time),secs()))][u(hook_point,%0,%1,%2,%3)]POINT: TICK: [first(%q0,|)] %0 %1 %3 [strlen(%2)][@@(/POINT)],[@@(TICK)][attrib_set(%VD/TICKS`%0,%q0)][u(hook_tick,%0,%1,%2,%3)]TICK: [first(%q0,|)] %0 %1 %3 [strlen(%2)][@@(/TICK)])[attrib_set(%VD/TOKEN`%0,1)])
+
+&update_ticker PoseMeter=letq(s,firstof(%qs,secs()),trimpenn(%qs [words(setdiff(map(get_player,filter(is_character_ic,lvplayers(%3))),@@(Include everyone IC!)))] %3 [strlen(%2)] [words(%2)]|[filter(update_ticker_remove_old,get(%VD/TICKS`%0),|)],|,R))
+&update_ticker_remove_old PoseMeter=gt(add(first(%0),v(var_post_life)),%qs)
+
+&var_freeze_time PoseMeter=20000
+&var_post_life PoseMeter=40000
+&var_ticks_per_RP PoseMeter=24
+
