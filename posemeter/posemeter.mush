@@ -12,7 +12,13 @@
 @@ Make objects
 @create PoseMeter
 @create PoseMeterData
+@create MeterInterface
+@set MeterInterface=!no_command
+@lock/command MeterInterface=FLAG^WIZARD|FLAG^ROYALTY
+@power MeterInterface=can_spoof
 @force me={@vd PoseMeter=[num(PoseMeterData)]}
+@force me={&vp MeterInterface=[num(PoseMeter)]}
+@force me={&vd MeterInterface=[num(PoseMeterData)]}
 
 @@ If say, pose, semipose, and @emit are already hooked on
 @@ @hook/before and @hook/after, just call capture_hook from
@@ -58,4 +64,21 @@
 &var_freeze_time PoseMeter=20000
 &var_post_life PoseMeter=40000
 &var_ticks_per_RP PoseMeter=24
+
+
+@@ ******** Checkmeter ********
+
+@@ On alt #: Show lockstate, horizontal ticks on all characters, token state on all characters.
+@@ on character name: Show player lockstate, token state, vertical last X ticks (up to &var_ticks_per_RP) with timestamps
+
+&is_character MeterInterface=not(isnum(%0))
+&cmd_checkmeter MeterInterface=$checkmeter *:@assert u(is_character,%0);@nspemit %#=switch(pmatch(%0),#-1,No character "%0" found,#-2, Ambiguous character name,u(display_meter,pmatch(%0)))
+
+&fun_pad_list MeterInterface=repeat(%2,sub(%1,words(%0,%2)))%0
+@@ This should indicate if they've expired.
+&display_meter MeterInterface=%b___ [@@(Player Frozen until: [u(display_playerfrozen,%0)])]%r[map(display_meter_map,u(fun_pad_list,u(fun_expand_ticks,get(%vd/ticks`%0)),20[@@(get(%vp/var_ticks_per_rp))],|),|,%r)]%r[ansi(u,/'~'\\)]
+&display_meter_map MeterInterface=ifelse(strlen(%0),%b|[ansi(Ghg,-)]|[u(display_tick,%0)],%b| |)
+&fun_expand_ticks MeterInterface=map(fun_expand_ticks_map,%0,|)
+&fun_expand_ticks_map MeterInterface=trimpenn(repeat(replace(%0,2,1)|,elements(%0,2)),|,r)
+&display_tick MeterInterface=- [convsecs(first(%0))] at [name(elements(%0,3))]
 
