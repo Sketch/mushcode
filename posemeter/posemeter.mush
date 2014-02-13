@@ -72,7 +72,8 @@
 @@ on character name: Show player lockstate, token state, vertical last X ticks (up to &var_ticks_per_RP) with timestamps
 
 &is_character MeterInterface=not(isnum(%0))
-&cmd_checkmeter MeterInterface=$checkmeter *:@assert u(is_character,%0);@nspemit %#=switch(pmatch(%0),#-1,No character "%0" found,#-2, Ambiguous character name,u(display_meter,pmatch(%0)))
+&cmd_checkmeter MeterInterface=$^\+?checkmeter (.*)$:@assert u(is_character,%1);@nspemit %#=switch(pmatch(%1),#-1,No character "%1" found,#-2, Ambiguous character name,u(display_meter,pmatch(%1)))
+@set MeterInterface/cmd_checkmeter=regexp
 
 &fun_pad_list MeterInterface=repeat(%2,sub(%1,words(%0,%2)))%0
 @@ This should indicate if they've expired.
