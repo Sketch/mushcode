@@ -20,16 +20,16 @@
 
 @restart KILT
 
-&cmd_4_basic KILT=@include me/inc_before=%1;@wait me={@include me/inc_main=%0,%1;@include me/inc_after}
+&cmd_4_basic KILT=@include me/inc_before=%1; @include me/inc_main=%0,%1; @include me/inc_after
 &cmd_3_start KILT=&data_test me=0; &data_failure me=0; &data_success me=0
 &cmd_3_check KILT=@nspemit %#=ansi(switch(v(data_failure),>0,hr,hg),Tests: [default(data_test,0)]\, Successes: [default(data_success,0)]\, Failures: [default(data_failure,0)])
 
 &queue_destroy KILT=@wipe me/queue_data_%0_*
 &queue_push KILT=&queue_data_%0_[rjust(inc(nattr(me/queue_data_*)),4,0)] me=%1
-&queue_activate KILT=@dolist/notify lattr(me/queue_data_%0_*)={@include/nobreak/localize me/%i0};@wait me={@include me/queue_destroy=%0}
+&queue_activate KILT=@dolist/inplace lattr(me/queue_data_%0_*)={@include/nobreak/localize me/%i0};@include me/queue_destroy=%0
 
 @set KILT=var_delim:%t
-&inc_before KILT=@dolist/delim/notify [v(var_delim)] [u(get_stubs,%0,v(var_delim))]={ @include me/queue_push=stubs,&[first(%i0)] [u(inc_before_fun,%#,%i0)]=[xget(rest(before(%i0,=)),first(%i0))]; &[first(%i0)] [u(inc_before_fun,%#,%i0)]=[after(%i0,=)] }
+&inc_before KILT=@dolist/inplace/delim [v(var_delim)] [u(get_stubs,%0,v(var_delim))]={ @include me/queue_push=stubs,&[first(%i0)] [u(inc_before_fun,%#,%i0)]=[xget(rest(before(%i0,=)),first(%i0))]; &[first(%i0)] [u(inc_before_fun,%#,%i0)]=[after(%i0,=)] }
 &inc_before_fun KILT=locate(%0,rest(before(%1,=)),*)
 
 &evaluate KILT=ulambda(#lambda/objeval(%0,%1),%0,%1)
