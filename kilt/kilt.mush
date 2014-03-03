@@ -54,20 +54,6 @@ KILT START
 KILT 1=1
 KILT 1\=1=1\=1
 
-@@ Queue tests
-@@ I don't recommend testing command-based code with KILT.
-@drain me/KILTQ
-&kilt_a me=0
-&kilt_b me=0
-KILT_PIN queue_push=TEST,&kilt_a %#=1
-@notify me/KILTQ
-@wait me/KILTQ={ KILT 0=[v(kilt_a)]; KILT 0=[v(kilt_b)]; KILT 1=[nattr(kilt/queue_data_test_*)] ; @notify me/KILTQ }
-@wait me/KILTQ={ KILT_PIN queue_push=TEST,&kilt_b %#=1; @notify me/KILTQ }
-@wait me/KILTQ={ KILT 0=[v(kilt_a)]; KILT 0=[v(kilt_b)]; KILT 2=[nattr(kilt/queue_data_test_*)] ; @notify me/KILTQ }
-@wait me/KILTQ={ KILT_PIN queue_activate=TEST; @notify me/KILTQ }
-@wait me/KILTQ={ KILT 1=[v(kilt_a)]; KILT 1=[v(kilt_b)]; @notify me/KILTQ }
-@wait me/KILTQ={ &kilt_a me; &kilt_b me; @trigger kilt/queue_destroy=test; @drain me/KILTQ }
-
 @@ Right-hand-side parser tests
 KILT x y\=z  =  [u(kilt/get_stubs,lit([@@(&x y=z)]),|)]
 KILT = [u(kilt/get_stubs,lit(&x y=z),|)]
