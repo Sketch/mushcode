@@ -1,0 +1,80 @@
+@@ KILT PennMUSH Softcode testing framework
+@@ Author: Sketch@M*U*S*H
+@@
+@@ KILT START - Reset test count
+@@ KILT CHECK - Report count of tests, successes, and failures
+@@ KILT expect = softcode - Check that 'expect' matches the output of softcode
+@@ Use [@@(&attr testobject=value)] to temporarily replace an attribute value.
+@@ Attributes will be restored regardless of other code failures.
+
+
+@create KILT
+@set KILT=!no_command
+@set KILT=Wizard
+
+@command/add/eqsplit/noparse/rsnoparse KILT
+@command/restrict KILT=FLAG^WIZARD
+@startup KILT=@hook/override KILT=KILT,KILT
+&KILT KILT=$^KILT(/[a-zA-Z]*)?\s+(.*?)(?\:=(?<!\\=)(.*))?$:@include me/cmd_%+_[switch(%+,3,%2,4,basic)]=%2,%3,%1,%0
+@set KILT/kilt=regexp
+
+@restart KILT
+
+&cmd_4_basic KILT=@include me/inc_before=%1;@wait me={@include me/inc_main=%0,%1;@include me/inc_after}
+&cmd_3_start KILT=&data_test me=0; &data_failure me=0; &data_success me=0
+&cmd_3_check KILT=@nspemit %#=ansi(switch(v(data_failure),>0,hr,hg),Tests: [default(data_test,0)]\, Successes: [default(data_success,0)]\, Failures: [default(data_failure,0)])
+
+&queue_destroy KILT=@wipe me/queue_data_%0_*
+&queue_push KILT=&queue_data_%0_[rjust(inc(nattr(me/queue_data_*)),4,0)] me=%1
+&queue_activate KILT=@dolist/notify lattr(me/queue_data_%0_*)={@include/nobreak/localize me/%i0};@wait me={@include me/queue_destroy=%0}
+
+@set KILT=var_delim:%t
+&inc_before KILT=@dolist/delim/notify [v(var_delim)] [u(get_stubs,%0,v(var_delim))]={ @include me/queue_push=stubs,&[first(%i0)] [u(inc_before_fun,%#,%i0)]=[xget(rest(before(%i0,=)),first(%i0))]; &[first(%i0)] [u(inc_before_fun,%#,%i0)]=[after(%i0,=)] }
+&inc_before_fun KILT=locate(%0,rest(before(%1,=)),*)
+
+&evaluate KILT=ulambda(#lambda/objeval(%0,%1),%0,%1)
+&inc_main KILT=@include/nobreak me/inc_main_process=u(evaluate,%#,%0),u(evaluate,%#,%1)
+&inc_main_process KILT=@include me/inc_record=%0,%1,u(compare,%0,%1); @assert cor(v(var_verbose),not(u(compare,%0,%1))); @include me/inc_report=%0,%1,u(compare,%0,%1)
+&inc_after KILT=@include me/queue_activate=stubs
+
+&inc_report KILT=@nspemit %#=ansi(ifelse(%2,hg,hr),ifelse(%2,PASS,FAIL)[ansi(n,|)] %0 [ansi(n,==)] %1)
+&inc_record KILT=&data_test me=inc(default(me/data_test,0)); &data_[switch(%2,1,success,0,failure)] me=inc(default(me/data_[switch(%2,1,success,0,failure)],0))
+&compare KILT=switch(%1,%0,1,0)
+
+
+&get_stubs KILT=trimpenn(u(get_stubs_recurse,%0,%1),%1,R)
+&get_stubs_recurse KILT=ifelse(regmatch(%0,v(get_stubs_regexp),1:1),%q1%1[u(get_stubs_recurse,after(%0,%q1))],@@())
+&get_stubs_regexp KILT=\[@@\(&(.*?)\)\]
+
+
+@@ *** Test section ***
+KILT START
+
+@@ Basics
+KILT 1=1
+KILT 1\=1=1\=1
+
+@@ Queue tests
+@@ I don't recommend testing command-based code with KILT.
+&kilt_pin2 KILT=$KILT_PIN *=*:@break strmatch(%1,*\,*);@include me/%0=%1,%2;@notify %#/KILTQ
+&kilt_pin3 KILT=$KILT_PIN *=*,*:@include me/%0=%1,%2;@notify %#/KILTQ
+@drain me/KILTQ
+&kilt_a me=0
+&kilt_b me=0
+KILT_PIN queue_push=TEST,&kilt_a %#=1
+@wait me/KILTQ={ KILT 0=[v(kilt_a)]; KILT 0=[v(kilt_b)]; KILT 1=[nattr(kilt/queue_data_test_*)] ; @notify me/KILTQ }
+@wait me/KILTQ={ KILT_PIN queue_push=TEST,&kilt_b %#=1; @notify me/KILTQ }
+@wait me/KILTQ={ KILT 0=[v(kilt_a)]; KILT 0=[v(kilt_b)]; KILT 2=[nattr(kilt/queue_data_test_*)] ; @notify me/KILTQ }
+@wait me/KILTQ={ KILT_PIN queue_activate=TEST; @notify me/KILTQ }
+@wait me/KILTQ={ KILT 1=[v(kilt_a)]; KILT 1=[v(kilt_b)]; @notify me/KILTQ }
+@wait me/KILTQ={ &kilt_a me; &kilt_b me; @trigger kilt/queue_destroy=test; &kilt_pin2 KILT; &kilt_pin3 KILT; @drain me/KILTQ }
+
+@@ Right-hand-side parser tests
+KILT x y\=z  =  [u(kilt/get_stubs,lit([@@(&x y=z)]),|)]
+KILT = [u(kilt/get_stubs,lit(&x y=z),|)]
+KILT one two\=three four   =  [u(kilt/get_stubs,lit([@@(&one two=three four)]),|)]
+KILT one two\=three four|x y\=z  =  [u(kilt/get_stubs,lit([@@(&one two=three four)] [@@(&x y=z)]),|)]
+
+KILT final=[@@(&testattr kilt=final)][get(kilt/testattr)]
+
+KILT CHECK
