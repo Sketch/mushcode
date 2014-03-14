@@ -2,6 +2,7 @@
 @@ Author: Sketch@M*U*S*H
 
 @create OOC
+@set OOC=!no_command
 @power OOC = Can_spoof
 &DESCRIBE OOC=The OOC command.
 &OOC OOC=$^\+?ooc ([\:;"])?(.*)$:@nsremit %L=<OOC> %n[switch(%1,:,%b%2,;,%2,",%bsays\, "%2",%bsays\, "%2")]
