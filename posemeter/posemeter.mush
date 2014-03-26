@@ -7,6 +7,11 @@
 @@ Create side-effect functions hook_record, hook_tick, and hook_point
 @@ to take actions.
 
+@@ Stub KILT testing suite if it doesn't exist
+&KILT me=$KILT*:@@ Do nothing
+@set me=temp_resetflags:[ifelse(hasflag(me,no_command),!,)]no_command
+@set me=!no_command
+
 @@ ******** PoseMeter ********
 
 @@ Make objects
@@ -28,22 +33,45 @@
 
 &capture_hook PoseMeter=u(capture_hook_do,%#,%L,%c)
 
-&capture_hook_do PoseMeter=u(hook_record,[u(capture_hook_qset,%0,%1,%2)][letq(4,u(remove_tokens_except_arg1_SIDEFX,lvplayers(%ql),%qc),letq(0,u(check_rules),ifelse(%q0,u(do_tick,%qc,%qp,%qt,%ql),%q0)) %q4)])
+&capture_hook_do PoseMeter=u(hook_record,[u(capture_hook_qset,%0,%1,%2)][letq(4,u(remove_tokens_except_arg1_SIDEFX,lvplayers(%ql),%qc),letq(0,u(check_rules,%0,%1,%2),ifelse(%q0,u(do_tick,%qc,%qp,%qt,%ql),%q0)) %q4)])
 
 &capture_hook_qset PoseMeter=setq(c,%0,p,u(get_player,%0),l,%1,t,switch(first(%2),POSE,%n%b[rest(%2)],SEMIPOSE,%n[rest(%2)],SAY,%n says\, "[rest(%2)]",@EMIT,rest(%2),case(left(%2,1),:,%n%b[after(%2,:)],;,%n[after(%2,;)],",%n says\, "[after(%2,")]",\\,after(%2,\\),ansi(hr,#-1 LOOK AT THIS FATAL ERROR))))
 @@ " This comment fixes Vim syntax highlighting.
 
+&check_rules_args Posemeter=@@ q-regs are used as implicit parameters for check_rules_fold: %qc = %0 = Character, %qp = %1 = Player, %ql = %2 = Location, %qt = %3 = Text
+&check_rules PoseMeter=localize([u(capture_hook_qset,%0,%1,%2)][u(check_rules_main,v(var_rules))])
+&check_rules_main PoseMeter=fold(check_rules_fold,%0,OK)
+&check_rules_fold PoseMeter=switch(%0,FAIL*,%0,OK*,letq(0,ifelse(strmatch(%1,!*),not(u(is_[after(%1,!)],%qc,%qp,%ql,%qt)),t(u(is_%1,%qc,%qp,%ql,%qt))),ifelse(%q0,OK,FAIL: %1 for [u(check_rules_fold_message)]))
+&check_rules_fold_message PoseMeter=Player "%qp" Character "[name(%qc)]\(%qc\)" at [time()] in room "[name(%ql)]\(%ql\)")
 
-&check_rules PoseMeter=if(u(is_player_unfrozen,%qp),if(cand(u(is_post_long_enough,%qt),not(u(is_character_tokened,%qc)),u(is_character_IC,%qc),not(u(is_player_alone,lvplayers(%ql),%qc)),not(u(is_character_in_own_room,%ql,%qc)),u(is_public_room,%ql)),RULES SUCCEED!,#-1 RULE FAILED),#-1 PLAYER_ID %QP CURRENTLY LOCKED)
 
-&is_player_unfrozen PoseMeter=if(hasattr(%VD,frozen`%0),switch(get(%VD/frozen`%0),LOCKED,0,<[secs()],1,0),1)
+&get_player PoseMeter=after(%0,#)
+&is_true PoseMeter=True
+&is_false PoseMeter=#-1
+&is_player_unfrozen PoseMeter=if(hasattr(%VD,frozen`%1),switch(get(%VD/frozen`%1),LOCKED,0,<[secs()],1,0),1)
 &is_character_IC PoseMeter=member(IC TP LRP,get(%0/playstatus))
-&is_player_alone PoseMeter=lt(words(setdiff(map(get_player,filter(is_character_IC,%0)),u(get_player,%1))),1)
+&is_player_alone PoseMeter=lt(words(setdiff(map(get_player,filter(is_character_IC,lvplayers(%2))),u(get_player,%0))),1)
 &is_character_tokened PoseMeter=hasattr(%VD,token`%0)
-&is_post_long_enough PoseMeter=gt(strlen(%0),50)
-&is_character_in_own_room PoseMeter=cand(strmatch(owner(%1),%0),strmatch(name(%1),*[name(%0)]*))
+&is_post_long_enough PoseMeter=gt(strlen(%3),50)
+&is_character_in_own_room PoseMeter=cand(strmatch(owner(%2),%0),strmatch(name(%2),*[name(%0)]*))
 @@ PATHFINDER: #7252
-&is_public_room PoseMeter=u(#7252/is_public_room,%0)
+&is_public_room PoseMeter=u(#7252/is_public_room,%2)
+
+KILT OK=[u(Posemeter/check_rules_fold,OK,true)]
+KILT FAIL: Narf=[u(Posemeter/check_rules_fold,FAIL: Narf,true)]
+KILT FAIL: false for *=[u(Posemeter/check_rules_fold,OK,false)]
+KILT OK=[u(Posemeter/check_rules_main,true)]
+KILT OK=[u(Posemeter/check_rules_main,true true)]
+KILT FAIL: false for *=[u(Posemeter/check_rules_main,false)]
+KILT FAIL: false for *=[u(Posemeter/check_rules_main,true true false)]
+KILT OK=[u(Posemeter/check_rules_main,!false)]
+KILT FAIL: !true for *=[u(Posemeter/check_rules_main,!true)]
+KILT FAIL: !true for *=[u(Posemeter/check_rules_main,!true)]
+KILT 1=[u(Posemeter/is_post_long_enough,,,,repeat(x,100)]
+KILT 0=[u(Posemeter/is_post_long_enough,,,,repeat(x,2)]
+KILT OK=[setq(t,repeat(x,100))][u(Posemeter/check_rules_main,post_long_enough)]
+KILT OK=[setq(t,repeat(x,100))][u(Posemeter/check_rules_main,true post_long_enough)]
+KILT FAIL: post_long_enough*=[setq(t,repeat(x,2))][u(Posemeter/check_rules_main,true post_long_enough)]
 
 
 &remove_tokens_except_arg1_SIDEFX PoseMeter=letq(p,u(get_player,%1),iter(filter(remove_tokens_except_arg1_filter,%0),attrib_set(%VD/TOKEN`%i0)CLEARTOKEN:%i0))
@@ -64,6 +92,7 @@
 &var_freeze_time PoseMeter=20000
 &var_post_life PoseMeter=40000
 &var_ticks_per_RP PoseMeter=24
+&var_rules PoseMeter=Player_Unfrozen Post_Long_Enough !Character_Tokened !Character_in_Own_Room !Player_Alone Public_Room
 
 
 @@ ******** Checkmeter ********
@@ -83,3 +112,6 @@
 &fun_expand_ticks_map MeterInterface=trimpenn(repeat(replace(%0,2,1)|,elements(%0,2)),|,r)
 &display_tick MeterInterface=- [convsecs(first(%0))] at [name(elements(%0,3))]
 
+@@ *** Cleanup ***
+
+@set me=[v(temp_resetflags)]
