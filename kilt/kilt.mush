@@ -8,6 +8,7 @@
 @@ Attributes will be restored regardless of other code failures.
 @@ The value of mocked attributes cannot be &VAR_DELIM (default %t).
 @@ Presently, the value of mocked attributes cannot contain the string ")]".
+@@ Make sure your code has matching brackets and parentheses!
 
 
 @create KILT
@@ -31,7 +32,7 @@
 &queue_activate KILT=@dolist/inplace lattr(me/queue_data_%0_*)={@include/nobreak/localize me/%i0};@include me/queue_destroy=%0
 
 @set KILT=var_delim:%t
-&inc_before KILT=@dolist/inplace/delim [v(var_delim)] [u(get_stubs,%0,v(var_delim))]={ @include me/queue_push=stubs,&[first(%i0)] [u(inc_before_fun,%#,%i0)]=[xget(rest(before(%i0,=)),first(%i0))]; &[first(%i0)] [u(inc_before_fun,%#,%i0)]=[after(%i0,=)] }
+&inc_before KILT=@dolist/inplace/delim [v(var_delim)] [u(get_stubs,%0,v(var_delim))]={ @include me/queue_push=stubs,&[first(%i0)] [u(inc_before_fun,%#,%i0)]=lit\([xget(rest(before(%i0,=)),first(%i0))]\); &[first(%i0)] [u(inc_before_fun,%#,%i0)]=[after(%i0,=)] }
 &inc_before_fun KILT=locate(%0,rest(before(%1,=)),*)
 
 &evaluate KILT=ulambda(#lambda/objeval(%0,%1),%0,%1)
@@ -63,5 +64,11 @@ KILT one two\=three four   =  [u(kilt/get_stubs,lit([@@(&one two=three four)]),|
 KILT one two\=three four|x y\=z  =  [u(kilt/get_stubs,lit([@@(&one two=three four)] [@@(&x y=z)]),|)]
 
 KILT final=[@@(&testattr kilt=final)][get(kilt/testattr)]
+
+@@ Two-step dependant test: Make sure KILT restores attributes without evaluating
+&temp_test KILT=left(STR,1)
+KILT =[@@(&temp_test KILT=)][get(KILT/temp_test)]
+KILT left\(STR\,1\)=[get(KILT/temp_test)]
+&temp_test KILT
 
 KILT CHECK
