@@ -6,6 +6,8 @@
 @@ KILT expect = softcode - Check that 'expect' matches the output of softcode
 @@ Use [@@(&attr testobject=value)] to temporarily replace an attribute value.
 @@ Attributes will be restored regardless of other code failures.
+@@ The value of mocked attributes cannot be &VAR_DELIM (default %t).
+@@ Presently, the value of mocked attributes cannot contain the string ")]".
 
 
 @create KILT
@@ -14,7 +16,7 @@
 
 @command/add/eqsplit/noparse/rsnoparse KILT
 @command/restrict KILT=FLAG^WIZARD
-@startup KILT=@hook/override KILT=KILT,KILT
+@startup KILT=@hook/override/inline KILT=KILT,KILT
 &KILT KILT=$^KILT(/[a-zA-Z]*)?\s+(.*?)(?\:=(?<!\\=)(.*))?$:@include me/cmd_%+_[switch(%+,3,%2,4,basic)]=%2,%3,%1,%0
 @set KILT/kilt=regexp
 
