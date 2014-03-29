@@ -31,18 +31,60 @@
 @startup PoseMeter=@dolist say pose semipose @emit={@hook/after ##=%!,capture_hook}
 @describe PoseMeter=A transluscent ball with a clock and a bunch of meters and tubes inside it.
 
-&capture_hook PoseMeter=u(capture_hook_do,%#,%L,%c)
+&frozen PoseData=Indexed by PLAYER_ID. When [secs()] > value, a meter is unfrozen. Set a player's frozen to LOCKED if they are banned from PoseMeter.
+&tick PoseData=Indexed by Character DBREf. SECS VALUE LOC STRLEN WORDS
+&token PoseData=Warning!! HUGE attribute tree!! A Character with a token gets no tick for posing.
 
-&capture_hook_do PoseMeter=u(hook_record,[u(capture_hook_qset,%0,%1,%2)][letq(4,u(remove_tokens_except_arg1_SIDEFX,lvplayers(%ql),%qc),letq(0,u(check_rules,%0,%1,%2),ifelse(%q0,u(do_tick,%qc,%qp,%qt,%ql),%q0)) %q4)])
+&var_freeze_time PoseMeter=20000
+&var_post_life PoseMeter=40000
+&var_ticks_per_RP PoseMeter=24
+&var_rules PoseMeter=Player_Unfrozen Post_Long_Enough !Character_Tokened !Character_in_Own_Room !Player_Alone Public_Room
+
+@@ Actions section
+
+@listen PoseMeter=ACTION:*
+@@ %0: Character  %1: Location  %2: Player  %3: Text
+@amhear PoseMeter=@include me/action_[first(first(%0,:))]=first(%0,:),elements(rest(%0,:),1,|),elements(rest(%0,:),2,|),elements(rest(%0,:),3,|),extract(rest(%0,:),4,8192,|)
+
+&action_fail PoseMeter=@include me/action_reset_tokens_except_arg1s=%1,%2,%3,%4
+&action_OK PoseMeter=@include me/action_reset_tokens_except_arg1s=%1,%2,%3,%4; @include me/action_place_token=%1,%2,%3,%4; @include me/action_tick_or_point=%1,%2,%3,%4
+&action_place_token PoseMeter=&TOKEN`%0 %VD=1
+&action_reset_tokens_except_arg1s PoseMeter=@dolist letq(current,%2,filter(f_not_current_player,lvplayers(%1)))={@wipe %VD/TOKEN`%i0}
+&f_not_current_player PoseMeter=t(comp(u(get_player,%0),%q<current>,I))
+
+&action_tick_or_point PoseMeter=@include me/action_update_ticks=%0,%1,%2,%3; @assert gte(u(f_count_ticks,%0),v(var_ticks_per_RP)); @include me/action_do_point=%0,%1,%2,%3 ; &frozen`%2 %VD=[add(v(var_freeze_time),secs())]
+&f_count_ticks PoseMeter=fold(#lambda/add(\%0,elements(\%1,2)),get(%VD/TICKS`%0),0,|)
+
+&action_update_ticks PoseMeter=&TICKS`%0 %VD=[u(f_update_ticks,%0,%1,%2,%3)]
+&f_update_ticks PoseMeter=letq(s,firstof(%qs,secs()),trimpenn(%qs [u(f_count_ic_players,%1)] %1 [strlen(%3)] [words(%3)]|[u(f_unexpired_ticks,%0)],|,R))
+&f_count_ic_players PoseMeter=words(setunion(map(get_player,filter(is_character_ic,lvplayers(%0))),))
+&f_unexpired_ticks PoseMeter=filter(f_update_ticker_remove_old,get(%VD/TICKS`%0),|)
+&f_update_ticker_remove_old PoseMeter=gt(add(first(%0),v(var_post_life)),%qs)
+
+
+KILT 5=[@@(&TICKS`TEST PoseMeterData=x 1 x|x 2 x|x 2 x|x 0 x)][u(Posemeter/f_count_ticks,TEST)]
+@@ Doing the best I can
+KILT 1=[@@(&get_player PoseMeter=gotten)][@@(&is_character_ic PoseMeter=1)][u(PoseMeter/f_count_ic_players,%l)]
+KILT 0=[@@(&get_player PoseMeter=gotten)][@@(&is_character_ic PoseMeter=0)][u(PoseMeter/f_count_ic_players,%l)]
+KILT [secs()] bacon DEF 7 2=[@@(&f_count_ic_players PoseMeter=bacon)][@@(&f_unexpired_ticks PoseMeter=)][u(PoseMeter/f_update_ticker,ABC,DEF,GHI,JKL MNO)]
+KILT [secs()] bacon DEF 7 2|cheese=[@@(&f_count_ic_players PoseMeter=bacon)][@@(&f_unexpired_ticks PoseMeter=cheese)][u(PoseMeter/f_update_ticker,ABC,DEF,GHI,JKL MNO)]
+
+@@ Rules section
+
+&capture_hook PoseMeter=nspemit(me,u(capture_hook_do,%#,%L,%c))
+&capture_hook_do PoseMeter=ACTION:[u(check_rules,%0,%1,%2)]
+
+KILT ACTION:zorp=[@@(&check_rules PoseMeter=zorp)][u(Posemeter/capture_hook_do)]
 
 &capture_hook_qset PoseMeter=setq(c,%0,p,u(get_player,%0),l,%1,t,switch(first(%2),POSE,%n%b[rest(%2)],SEMIPOSE,%n[rest(%2)],SAY,%n says\, "[rest(%2)]",@EMIT,rest(%2),case(left(%2,1),:,%n%b[after(%2,:)],;,%n[after(%2,;)],",%n says\, "[after(%2,")]",\\,after(%2,\\),ansi(hr,#-1 LOOK AT THIS FATAL ERROR))))
 @@ " This comment fixes Vim syntax highlighting.
 
 &check_rules_args Posemeter=@@ q-regs are used as implicit parameters for check_rules_fold: %qc = %0 = Character, %qp = %1 = Player, %ql = %2 = Location, %qt = %3 = Text
 &check_rules PoseMeter=localize([u(capture_hook_qset,%0,%1,%2)][u(check_rules_main,v(var_rules))])
-&check_rules_main PoseMeter=fold(check_rules_fold,%0,OK)
-&check_rules_fold PoseMeter=switch(%0,FAIL*,%0,OK*,letq(0,ifelse(strmatch(%1,!*),not(u(is_[after(%1,!)],%qc,%qp,%ql,%qt)),t(u(is_%1,%qc,%qp,%ql,%qt))),ifelse(%q0,OK,FAIL: %1 for [u(check_rules_fold_message)]))
-&check_rules_fold_message PoseMeter=Player "%qp" Character "[name(%qc)]\(%qc\)" at [time()] in room "[name(%ql)]\(%ql\)")
+&check_rules_main PoseMeter=fold(check_rules_fold,%0,OK:[u(check_rules_fold_message)])
+&check_rules_fold PoseMeter=switch(%0,FAIL*,%0,OK*,letq(0,ifelse(strmatch(%1,!*),not(u(is_[after(%1,!)],%qc,%qp,%ql,%qt)),t(u(is_%1,%qc,%qp,%ql,%qt))),ifelse(%q0,OK:,FAIL %1:)[u(check_rules_fold_message)]))
+&check_rules_fold_message PoseMeter=%qc|%ql|%qp|%qt
+@@ Player "%qp" Character "[name(%qc)]\(%qc\)" at [time()] in room "[name(%ql)]\(%ql\)")
 
 
 &get_player PoseMeter=after(%0,#)
@@ -50,49 +92,29 @@
 &is_false PoseMeter=#-1
 &is_player_unfrozen PoseMeter=if(hasattr(%VD,frozen`%1),switch(get(%VD/frozen`%1),LOCKED,0,<[secs()],1,0),1)
 &is_character_IC PoseMeter=member(IC TP LRP,get(%0/playstatus))
-&is_player_alone PoseMeter=lt(words(setdiff(map(get_player,filter(is_character_IC,lvplayers(%2))),u(get_player,%0))),1)
+&is_player_alone PoseMeter=lt(words(setdiff(u(ic_players_in,%2),u(get_player,%0))),1)
+&ic_players_in PoseMeter=setunion(map(get_player,filter(is_character_IC,lvplayers(%0))),)
 &is_character_tokened PoseMeter=hasattr(%VD,token`%0)
 &is_post_long_enough PoseMeter=gt(strlen(%3),50)
 &is_character_in_own_room PoseMeter=cand(strmatch(owner(%2),%0),strmatch(name(%2),*[name(%0)]*))
 @@ PATHFINDER: #7252
 &is_public_room PoseMeter=u(#7252/is_public_room,%2)
 
-KILT OK=[u(Posemeter/check_rules_fold,OK,true)]
-KILT FAIL: Narf=[u(Posemeter/check_rules_fold,FAIL: Narf,true)]
-KILT FAIL: false for *=[u(Posemeter/check_rules_fold,OK,false)]
-KILT OK=[u(Posemeter/check_rules_main,true)]
-KILT OK=[u(Posemeter/check_rules_main,true true)]
-KILT FAIL: false for *=[u(Posemeter/check_rules_main,false)]
-KILT FAIL: false for *=[u(Posemeter/check_rules_main,true true false)]
-KILT OK=[u(Posemeter/check_rules_main,!false)]
-KILT FAIL: !true for *=[u(Posemeter/check_rules_main,!true)]
-KILT FAIL: !true for *=[u(Posemeter/check_rules_main,!true)]
+KILT OK:*=[u(Posemeter/check_rules_fold,OK,true)]
+KILT FAIL Narf:=[u(Posemeter/check_rules_fold,FAIL Narf:,true)]
+KILT FAIL false:*=[u(Posemeter/check_rules_fold,OK,false)]
+KILT OK:*=[u(Posemeter/check_rules_main,true)]
+KILT OK:*=[u(Posemeter/check_rules_main,true true)]
+KILT FAIL false:*=[u(Posemeter/check_rules_main,false)]
+KILT FAIL false:*=[u(Posemeter/check_rules_main,true true false)]
+KILT OK:*=[u(Posemeter/check_rules_main,!false)]
+KILT FAIL !true:*=[u(Posemeter/check_rules_main,!true)]
+KILT FAIL !true:*=[u(Posemeter/check_rules_main,!true)]
 KILT 1=[u(Posemeter/is_post_long_enough,,,,repeat(x,100)]
 KILT 0=[u(Posemeter/is_post_long_enough,,,,repeat(x,2)]
-KILT OK=[setq(t,repeat(x,100))][u(Posemeter/check_rules_main,post_long_enough)]
-KILT OK=[setq(t,repeat(x,100))][u(Posemeter/check_rules_main,true post_long_enough)]
-KILT FAIL: post_long_enough*=[setq(t,repeat(x,2))][u(Posemeter/check_rules_main,true post_long_enough)]
-
-
-&remove_tokens_except_arg1_SIDEFX PoseMeter=letq(p,u(get_player,%1),iter(filter(remove_tokens_except_arg1_filter,%0),attrib_set(%VD/TOKEN`%i0)CLEARTOKEN:%i0))
-&remove_tokens_except_arg1_filter PoseMeter=neq(u(get_player,%0),%qp)
-
-
-&frozen PoseData=Indexed by PLAYER_ID. When [secs()] > value, a meter is unfrozen. Set a player's frozen to LOCKED if they are banned from PoseMeter.
-&tick PoseData=Indexed by Character DBREf. SECS VALUE LOC STRLEN WORDS
-&token PoseData=Warning!! HUGE attribute tree!! A Character with a token gets no tick for posing.
-
-
-&do_tick_args Posemeter=@@ %0 - Character  %1 - Player  %2 - Text  %3 - Location
-&do_tick PoseMeter=letq(0,u(update_ticker,%0,%1,%2,%3),ifelse(gte(fold(#lambda/add(\%0,elements(\%1,2)),%q0,0,|),v(var_ticks_per_rp)),[@@(POINT)][attrib_set(%VD/TICKS`%0)][attrib_set(%VD/frozen`%1,add(v(var_freeze_time),secs()))][u(hook_point,%0,%1,%2,%3)]POINT: TICK: [first(%q0,|)] %0 %1 %3 [strlen(%2)][@@(/POINT)],[@@(TICK)][attrib_set(%VD/TICKS`%0,%q0)][u(hook_tick,%0,%1,%2,%3)]TICK: [first(%q0,|)] %0 %1 %3 [strlen(%2)][@@(/TICK)])[attrib_set(%VD/TOKEN`%0,1)])
-
-&update_ticker PoseMeter=letq(s,firstof(%qs,secs()),trimpenn(%qs [words(setdiff(map(get_player,filter(is_character_ic,lvplayers(%3))),@@(Include everyone IC!)))] %3 [strlen(%2)] [words(%2)]|[filter(update_ticker_remove_old,get(%VD/TICKS`%0),|)],|,R))
-&update_ticker_remove_old PoseMeter=gt(add(first(%0),v(var_post_life)),%qs)
-
-&var_freeze_time PoseMeter=20000
-&var_post_life PoseMeter=40000
-&var_ticks_per_RP PoseMeter=24
-&var_rules PoseMeter=Player_Unfrozen Post_Long_Enough !Character_Tokened !Character_in_Own_Room !Player_Alone Public_Room
+KILT OK:*=[setq(t,repeat(x,100))][u(Posemeter/check_rules_main,post_long_enough)]
+KILT OK:*=[setq(t,repeat(x,100))][u(Posemeter/check_rules_main,true post_long_enough)]
+KILT FAIL post_long_enough:*=[setq(t,repeat(x,2))][u(Posemeter/check_rules_main,true post_long_enough)]
 
 
 @@ ******** Checkmeter ********
