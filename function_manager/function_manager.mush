@@ -3,16 +3,16 @@
 @@ PennMUSH does not retain @functions across reboots.
 @@ Here is some code to ease making lists of @functions to load when the game starts.
 @@ You'll want to put this on a low-DBRef#ed Thing, and/or make sure &STARTUP_TRIGGER is @triggered when the MUSH reboots.
-@@ Add function descriptions onto &FUN`name for the @functions you want to load.
+@@ Add function descriptions onto &FUN_<name> for the @functions you want to load.
 @@ See the &FUN attribute tree root for the format.
 
 
 @create Functions
 @power Functions=functions
-&FUN Functions=Holds all the functions. &FUN`NAME is: DBRef#/Attr min_args max_args restrictions
+&FUN Functions=Holds all the functions. &FUN_NAME is: DBRef#/Attr min_args max_args restrictions
 
 @@ @startup Functions=@trigger me/startup_trigger
-&startup_trigger Functions=@dolist lattr(me/fun`*)={@trigger me/startup_trigger`[words(v(##))]=after(##,FUN`),v(##)}
+&startup_trigger Functions=@dolist lattr(me/fun_*)={@trigger me/startup_trigger`[words(v(##))]=after(##,FUN_),v(##)}
 
 &startup_trigger`1 Functions=@function %0=[first(%1,/)],[rest(first(%1),/)]
 &startup_trigger`2 Functions=@function %0=[first(%1,/)],[rest(first(%1),/)],[elements(%1,2)]
