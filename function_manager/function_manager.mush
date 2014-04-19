@@ -8,7 +8,7 @@
 
 
 @create Functions
-@power Funtions=functions
+@power Functions=functions
 &FUN Functions=Holds all the functions. &FUN`NAME is: DBRef#/Attr min_args max_args restrictions
 
 @@ @startup Functions=@trigger me/startup_trigger
