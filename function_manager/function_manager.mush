@@ -8,6 +8,8 @@
 
 
 @create Functions
+@@ Wizard flag is required because @function requires control of the objects being @functioned.
+@set Functions=Wizard
 @power Functions=functions
 &FUN Functions=Holds all the functions. &FUN_NAME is: DBRef#/Attr min_args max_args restrictions
 
