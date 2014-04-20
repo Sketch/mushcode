@@ -4,8 +4,6 @@
 @@  Passively observe roleplay taking place on the MUSH and perform actions,
 @@  the primary purpose being awarding points/EXP for roleplaying.
 @@
-@@ Create side-effect functions hook_record, hook_tick, and hook_point
-@@ to take actions.
 
 @@ Stub KILT testing suite if it doesn't exist
 &KILT me=$KILT*:@@ Do nothing
@@ -32,12 +30,12 @@
 @describe PoseMeter=A transluscent ball with a clock and a bunch of meters and tubes inside it.
 
 &frozen PoseData=Indexed by PLAYER_ID. When [secs()] > value, a meter is unfrozen. Set a player's frozen to LOCKED if they are banned from PoseMeter.
-&tick PoseData=Indexed by Character DBREf. SECS VALUE LOC STRLEN WORDS
-&token PoseData=Warning!! HUGE attribute tree!! A Character with a token gets no tick for posing.
+&notches PoseData=Indexed by Character DBREf. SECS VALUE LOC STRLEN WORDS
+&token PoseData=Warning!! HUGE attribute tree!! A Character with a token gets no notch for posing.
 
 &var_freeze_time PoseMeter=20000
 &var_post_life PoseMeter=40000
-&var_ticks_per_RP PoseMeter=24
+&var_notches_per_RP PoseMeter=24
 &var_rules PoseMeter=Player_Unfrozen Post_Long_Enough !Character_Tokened !Character_in_Own_Room !Player_Alone Public_Room
 
 @@ Actions section
@@ -47,27 +45,27 @@
 @amhear PoseMeter=@include me/action_[first(first(%0,:))]=first(%0,:),elements(rest(%0,:),1,|),elements(rest(%0,:),2,|),elements(rest(%0,:),3,|),extract(rest(%0,:),4,8192,|)
 
 &action_fail PoseMeter=@include me/action_reset_tokens_except_arg1s=%1,%2,%3,%4
-&action_OK PoseMeter=@include me/action_reset_tokens_except_arg1s=%1,%2,%3,%4; @include me/action_place_token=%1,%2,%3,%4; @include me/action_tick_or_point=%1,%2,%3,%4
+&action_OK PoseMeter=@include me/action_reset_tokens_except_arg1s=%1,%2,%3,%4; @include me/action_place_token=%1,%2,%3,%4; @include me/action_notch_or_point=%1,%2,%3,%4
 &action_place_token PoseMeter=&TOKEN`%0 %VD=1
 &action_reset_tokens_except_arg1s PoseMeter=@dolist letq(current,%2,filter(f_not_current_player,lvplayers(%1)))={@wipe %VD/TOKEN`%i0}
 &f_not_current_player PoseMeter=t(comp(u(get_player,%0),%q<current>,I))
 
-&action_tick_or_point PoseMeter=@include me/action_update_ticks=%0,%1,%2,%3; @assert gte(u(f_count_ticks,%0),v(var_ticks_per_RP)); @include me/action_do_point=%0,%1,%2,%3 ; &frozen`%2 %VD=[add(v(var_freeze_time),secs())]
-&f_count_ticks PoseMeter=fold(#lambda/add(\%0,elements(\%1,2)),get(%VD/TICKS`%0),0,|)
+&action_notch_or_point PoseMeter=@include me/action_update_notches=%0,%1,%2,%3; @assert gte(u(f_count_notches,%0),v(var_notches_per_RP)); @include me/action_do_point=%0,%1,%2,%3 ; &frozen`%2 %VD=[add(v(var_freeze_time),secs())]
+&f_count_notches PoseMeter=fold(#lambda/add(\%0,elements(\%1,2)),get(%VD/NOTCHES`%0),0,|)
 
-&action_update_ticks PoseMeter=&TICKS`%0 %VD=[u(f_update_ticks,%0,%1,%2,%3)]
-&f_update_ticks PoseMeter=letq(s,firstof(%qs,secs()),trimpenn(%qs [u(f_count_ic_players,%1)] %1 [strlen(%3)] [words(%3)]|[u(f_unexpired_ticks,%0)],|,R))
+&action_update_notches PoseMeter=&NOTCHES`%0 %VD=[u(f_update_notches,%0,%1,%2,%3)]
+&f_update_notches PoseMeter=letq(s,firstof(%qs,secs()),trimpenn(%qs [u(f_count_ic_players,%1)] %1 [strlen(%3)] [words(%3)]|[u(f_unexpired_notches,%0)],|,R))
 &f_count_ic_players PoseMeter=words(setunion(map(get_player,filter(is_character_ic,lvplayers(%0))),))
-&f_unexpired_ticks PoseMeter=filter(f_update_ticker_remove_old,get(%VD/TICKS`%0),|)
-&f_update_ticker_remove_old PoseMeter=gt(add(first(%0),v(var_post_life)),%qs)
+&f_unexpired_notches PoseMeter=filter(f_update_notches_remove_old,get(%VD/NOTCHES`%0),|)
+&f_update_notches_remove_old PoseMeter=gt(add(first(%0),v(var_post_life)),%qs)
 
 
-KILT 5=[@@(&TICKS`TEST PoseMeterData=x 1 x|x 2 x|x 2 x|x 0 x)][u(Posemeter/f_count_ticks,TEST)]
+KILT 5=[@@(&NOTCHES`TEST PoseMeterData=x 1 x|x 2 x|x 2 x|x 0 x)][u(Posemeter/f_count_notches,TEST)]
 @@ Doing the best I can
 KILT 1=[@@(&get_player PoseMeter=gotten)][@@(&is_character_ic PoseMeter=1)][u(PoseMeter/f_count_ic_players,%l)]
 KILT 0=[@@(&get_player PoseMeter=gotten)][@@(&is_character_ic PoseMeter=0)][u(PoseMeter/f_count_ic_players,%l)]
-KILT [secs()] bacon DEF 7 2=[@@(&f_count_ic_players PoseMeter=bacon)][@@(&f_unexpired_ticks PoseMeter=)][u(PoseMeter/f_update_ticker,ABC,DEF,GHI,JKL MNO)]
-KILT [secs()] bacon DEF 7 2|cheese=[@@(&f_count_ic_players PoseMeter=bacon)][@@(&f_unexpired_ticks PoseMeter=cheese)][u(PoseMeter/f_update_ticker,ABC,DEF,GHI,JKL MNO)]
+KILT [secs()] bacon DEF 7 2=[@@(&f_count_ic_players PoseMeter=bacon)][@@(&f_unexpired_notches PoseMeter=)][u(PoseMeter/f_update_notches,ABC,DEF,GHI,JKL MNO)]
+KILT [secs()] bacon DEF 7 2|cheese=[@@(&f_count_ic_players PoseMeter=bacon)][@@(&f_unexpired_notches PoseMeter=cheese)][u(PoseMeter/f_update_notches,ABC,DEF,GHI,JKL MNO)]
 
 @@ Rules section
 
@@ -119,8 +117,8 @@ KILT FAIL post_long_enough:*=[setq(t,repeat(x,2))][u(Posemeter/check_rules_main,
 
 @@ ******** Checkmeter ********
 
-@@ On alt #: Show lockstate, horizontal ticks on all characters, token state on all characters.
-@@ on character name: Show player lockstate, token state, vertical last X ticks (up to &var_ticks_per_RP) with timestamps
+@@ On alt #: Show lockstate, horizontal notches on all characters, token state on all characters.
+@@ on character name: Show player lockstate, token state, vertical last X notches (up to &var_notches_per_RP) with timestamps
 
 &is_character MeterInterface=not(isnum(%0))
 &cmd_checkmeter MeterInterface=$^\+?checkmeter (.*)$:@assert u(is_character,%1);@nspemit %#=switch(pmatch(%1),#-1,No character "%1" found,#-2, Ambiguous character name,u(display_meter,pmatch(%1)))
@@ -128,11 +126,11 @@ KILT FAIL post_long_enough:*=[setq(t,repeat(x,2))][u(Posemeter/check_rules_main,
 
 &fun_pad_list MeterInterface=repeat(%2,sub(%1,words(%0,%2)))%0
 @@ This should indicate if they've expired.
-&display_meter MeterInterface=%b___ [@@(Player Frozen until: [u(display_playerfrozen,%0)])]%r[map(display_meter_map,u(fun_pad_list,u(fun_expand_ticks,get(%vd/ticks`%0)),20[@@(get(%vp/var_ticks_per_rp))],|),|,%r)]%r[ansi(u,/'~'\\)]
-&display_meter_map MeterInterface=ifelse(strlen(%0),%b|[ansi(Ghg,-)]|[u(display_tick,%0)],%b| |)
-&fun_expand_ticks MeterInterface=map(fun_expand_ticks_map,%0,|)
-&fun_expand_ticks_map MeterInterface=trimpenn(repeat(replace(%0,2,1)|,elements(%0,2)),|,r)
-&display_tick MeterInterface=- [convsecs(first(%0))] at [name(elements(%0,3))]
+&display_meter MeterInterface=%b___ [@@(Player Frozen until: [u(display_playerfrozen,%0)])]%r[map(display_meter_map,u(fun_pad_list,u(fun_expand_notches,get(%vd/notches`%0)),20[@@(get(%vp/var_notches_per_rp))],|),|,%r)]%r[ansi(u,/'~'\\)]
+&display_meter_map MeterInterface=ifelse(strlen(%0),%b|[ansi(Ghg,-)]|[u(display_notch,%0)],%b| |)
+&fun_expand_notches MeterInterface=map(fun_expand_notches_map,%0,|)
+&fun_expand_notches_map MeterInterface=trimpenn(repeat(replace(%0,2,1)|,elements(%0,2)),|,r)
+&display_notch MeterInterface=- [convsecs(first(%0))] at [name(elements(%0,3))]
 
 @@ *** Cleanup ***
 
