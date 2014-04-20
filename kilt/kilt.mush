@@ -46,7 +46,7 @@
 
 
 &get_stubs KILT=trimpenn(u(get_stubs_recurse,%0,%1),%1,R)
-&get_stubs_recurse KILT=ifelse(regmatch(%0,v(get_stubs_regexp),1:1),%q1%1[u(get_stubs_recurse,after(%0,%q1))],@@())
+&get_stubs_recurse KILT=ifelse(regmatch(%0,v(get_stubs_regexp),1:1),%q1%1[u(get_stubs_recurse,after(%0,%q1),%1)],@@())
 &get_stubs_regexp KILT=\[@@\(&(.*?)\)\]
 
 
@@ -70,5 +70,8 @@ KILT final=[@@(&testattr kilt=final)][get(kilt/testattr)]
 KILT =[@@(&temp_test KILT=)][get(KILT/temp_test)]
 KILT left\(STR\,1\)=[get(KILT/temp_test)]
 &temp_test KILT
+
+@@ Set three things without overlapping their contents.
+KILT hi kilt\=hello|beep kilt\=bop|glee kilt\=zot!=[u(KILT/get_stubs,lit([@@(&hi kilt=hello)][@@(&beep kilt=bop)][@@(&glee kilt=zot!)]),|)]
 
 KILT CHECK
