@@ -89,7 +89,7 @@ KILT ACTION:zorp=[@@(&check_rules PoseMeter=zorp)][u(Posemeter/capture_hook_do)]
 &is_true PoseMeter=True
 &is_false PoseMeter=#-1
 &is_player_unfrozen PoseMeter=if(hasattr(%VD,frozen`%1),switch(get(%VD/frozen`%1),LOCKED,0,<[secs()],1,0),1)
-&is_character_IC PoseMeter=member(IC TP LRP,get(%0/playstatus))
+&is_character_IC PoseMeter=t(member(IC TP LRP,get(%0/playstatus)))
 &is_player_alone PoseMeter=lt(words(setdiff(u(ic_players_in,%2),u(get_player,%0))),1)
 &ic_players_in PoseMeter=setunion(map(get_player,filter(is_character_IC,lvplayers(%0))),)
 &is_character_tokened PoseMeter=hasattr(%VD,token`%0)
