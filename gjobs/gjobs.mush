@@ -29,7 +29,6 @@
 &jobs Jobs=@@ Format: &jobs`<id>_<caption|data|body> ; @@ &jobs`<id>_data =group|owner|ctime|...
 &groups Jobs=@@ Format: &groups`<id>=Name|add_jobs_lock|see_jobs_lock|modify_jobs_lock|Description
 
-
 &cmd_
 
 &message_en_prefix Jobs=JOBS:%b
@@ -45,21 +44,14 @@
 
 &fun_ambiguity Jobs=switch(words(%0),>1,#-1 ambiguous,0,#-1 nonexistent,1,%0)
 
-&cmd_take1 Jobs=$^\+jobs?/take ([^/]+)$:@include me/permission_act,%#,%1;@include me/do_take=%#,%1
-&cmd_take2 Jobs=$^\+jobs?/take ([^/]+)/(.+)$:@include me/permission_see=%#,%1;@include me/permission_act,%#,%1/%2;@include me/do_take=%#,%1/%2
+&cmd_take1 Jobs=$^\+jobs?/take (.+)$:@include me/permission_see=%#,before(%1,/); @include me/permission_act,%#,%1;@include me/do_take=%#,%1
 
 @@ Can %0 see group %1 ?
-&permission_see Jobs=
-@@ | match against all groups
-@@ | filter invisible groups
-@@ -DB separation here-
-@@ switch(words(|), >1,#-1 group_ambiguous,0,#-1 group_nonexistent,1,|)
-@@ | setr(0,|)
-@@ @assert | = {@inclulde me/message,%0,%q0,%1}
+&permission_see Jobs=@assert setr(0,cor(u(fun_empty_string,%1),u(fun_ambiguity,u(db,retrieve_group,%0,%1))))={@include me/message,%0,see_denied,%q0,%1}
+&fun_empty_string Jobs=not(strlen(%0))
 
-
-@@ Can %0 act on possibly-non-unique job %1 ? (Optional %2 as group)
-&permission_act Jobs=@assert setr(0,u(fun_ambiguity,u(db,retrieve_job,%0,%1)))={@include me/message,%0,%q0,%1}
+@@ Can %0 act on possibly-non-unique job %1 ?
+&permission_act Jobs=@assert setr(0,u(fun_ambiguity,u(db,retrieve_job,%0,%1)))={@include me/message,%0,act_denied,%q0,%1}
 
 @@ Hook method for all DB calls. Will be used here to memoize.
 &db Jobs=u(me/db_%0,%1,%2,%3)
@@ -69,17 +61,20 @@
 
 @@ As %0, find all visible jobs matching %1
 &db_retrieve_job Jobs=switch(%1,*/*,u(db_retrieve_job_without_group
-grep(
 @@ | match against all jobs
 @@ | filter invisible jobs (by group)
+@@ |>Possibly filter to requested group
 
 @@ As %0, find all visible groups matching %1
-&db_retrieve_group Jobs=
+&db_retrieve_group Jobs=letq(0,%0,filter(me/db__private_retrieve_group_filter,lattr(me/groups`*)))
 &db_set_job_taken Jobs=
 &db_set_job_rejected Jobs=
 &db_set_job_completed Jobs=
 &db_add_job Jobs=
 
+
+&db__private_retrieve_group_filter Jobs=u(db__private_retrieve_group_filter_inner,u(me/%0,%q0))
+&db__private_retrieve_group_filter_inner Jobs=@@TODO
 
 @@ Memoize calls to %0 with arguments %1-%9
 &memoize Jobs=
