@@ -6,10 +6,11 @@
 @@ Hacking:
 @@
 @@ Jobs and Groups are coded as their own layer, to allow changing to SQL.
+@@ Whenever making database calls, always u(db,retrieve_job,%#,Job name)
+@@ &db_ methods are called by &db, and define the database API.
+@@ &db__ methods are private, only called by functions in &db_
 
 <JobRef> may be: Title or Group/Title
-
-&db_
 
 /list
 /list <group>
@@ -19,14 +20,12 @@
 /complete <JobRef>
 /read <JobRef>
 
-
-
 @create Jobs
 
 @@ can_nspemit removes NoSpoof info, and isn't necessary.
 @power Jobs=can_nspemit
 
-&jobs Jobs=@@ Format: &jobs`<id>_<caption|data|body> ; @@ &jobs`<id>_data =group|owner|ctime|...
+&jobs Jobs=@@ Format: &jobs`<id>_<caption|data|body> ; @@ &jobs`<id>_data =group_id|owner|ctime|...
 &groups Jobs=@@ Format: &groups`<id>=Name|add_jobs_lock|see_jobs_lock|modify_jobs_lock|Description
 
 &cmd_
@@ -59,8 +58,14 @@
 @@ %# takes non-ambiguous jobref %1.
 &do_take Jobs=@include me/db_modify_job=
 
-@@ As %0, find all visible jobs matching %1
-&db_retrieve_job Jobs=switch(%1,*/*,u(db_retrieve_job_without_group
+@@ As %0, find all visible jobs matching jobref %1
+&db_retrieve_job Jobs=letq(0,%0,filterbool(db__job_visible_filter,filter(db__job_group_filter,grepi(me,jobs`*_caption,%1))))
+&db__filter_job_group Jobs=strmatch(first(u(memoize,db__u_group,%q0,u(db__group_for_job,%0)),|),*%0*)
+&db__filter_job_visible Jobs=elements(u(memoize,db__u_group,%q0,u(db__group_for_job,%0)),1,|)
+&db__group_for_job Jobs=first(v(before(%1,_CAPTION)_DATA),|)
+&db__u_group Jobs=u(group`%1,%0)
+
+switch(%1,*/*,u(db_retrieve_job_without_group
 @@ | match against all jobs
 @@ | filter invisible jobs (by group)
 @@ |>Possibly filter to requested group
@@ -77,4 +82,4 @@
 &db__private_retrieve_group_filter_inner Jobs=@@TODO
 
 @@ Memoize calls to %0 with arguments %1-%9
-&memoize Jobs=
+&memoize Jobs=u(%0,%1,%2,%3,%4,%5,%6,%7,%8,%9)
