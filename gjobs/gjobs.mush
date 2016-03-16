@@ -1,0 +1,84 @@
+@@ Title: Garage Jobs
+@@ Author: Sketch @ M*U*S*H
+@@
+@@ Description: An easy-to-hack +jobs system
+@@
+@@ Hacking:
+@@
+@@ Jobs and Groups are coded as their own layer, to allow changing to SQL.
+
+@create Jobs
+
+@@ can_nspemit removes NoSpoof info, and isn't necessary.
+@power Jobs=can_nspemit
+
+&jobs Jobs=@@ Format: &jobs`<id>_<caption|data|body>
+&groups Jobs=@@ Format: &groups`<id>=Name|add_jobs_lock|see_jobs_lock|modify_jobs_lock|Description
+
+
+&cmd_
+&sidefx_
+
+&message_en_prefix Jobs=JOBS:%b
+&message_en_none_visible Jobs=No visible jobs matching "%0".
+&message_en_job_add_denied Jobs=You may not add jobs in group "%0".
+&message_en_job_see_denied Jobs=There is no group named "%0".
+&message_en_job_modify_denied Jobs=You may not modify jobs in group "%0".
+
+@@ Returns attr-list of jobs matching %1 that are visible to %0.
+&fun_lookup Jobs=u(me/fun_lookup_[switch(%0,*/*,with,without)]_group,%0,%1)
+&fun_lookup_with_group Jobs=
+&fun_lookup_without_group Jobs=
+
+
+&cmd_take1 Jobs=$^\+jobs?/take ([^/]+)$:@include me/permission_take,%#,%1;@include me/do_take=%#,%1
+&cmd_take2 Jobs=$^\+jobs?/take ([^/]+)/(.+)$:@include me/permission_see=%#,%1;@include me/permission_take,%#,%2;@include me/do_take=%#,%1/%2
+
+@@ Can %0 see group %1 ?
+&permission_see Jobs=
+@@ | match against all groups
+@@ | filter invisible groups
+@@ -DB separation here-
+@@ switch(words(|), >1,#-1 group_ambiguous,0,#-1 group_nonexistent,1,|)
+@@ | setr(0,|)
+@@ @assert | = {@inclulde me/message,%0,%q0,%1}
+
+
+@@ Can %0 take possibly-non-unique non-group job %1 ?
+&permission_take Jobs=
+@@ | match against all jobs
+@@ | filter invisible jobs (by group)
+@@ -DB separation here-
+@@ switch(words(|),>1,#-1 ambiguous,0,#-1 nonexistent,1,|)
+@@ | setr(0,|)
+@@ @assert | = {@include me/message,%0,%q0,%1}
+
+
+@@ %# takes non-ambiguous jobref %1.
+&do_take Jobs=@include me/db_modify_job=
+
+&db_retrieve_job Jobs=
+@@ As %0, find all groups matching %1
+&db_retrieve_group Jobs=
+&db_set_job_taken Jobs=
+&db_set_job_rejected Jobs=
+&db_set_job_completed Jobs=
+&db_add_job Jobs=
+
+
+@@ Memoize calls to %0 with arguments %1-%9
+&memoize Jobs=
+
+<JobRef> may be: Title or Group/Title
+
+&db_
+
+/list
+/list <group>
+/add <group>=<caption>/<body>
+/take <JobRef>
+/reject <JobRef>
+/complete <JobRef>
+/read <JobRef>
+
+
