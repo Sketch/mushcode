@@ -7,8 +7,10 @@
 @@
 @@ Jobs and Groups are coded as their own layer, to allow changing to SQL.
 @@ Whenever making database calls, always u(db,retrieve_job,%#,Job name)
-@@ &db_ methods are called by &db, and define the database API.
-@@ &db__ methods are private, only called by functions in &db_
+@@ &db_ functions are called by &db, and define the database API.
+@@ &db__ functions are private, only called by functions in &db_
+@@ &db_* are functions that query the database
+@@ &db_set_* are @includes that modify the database
 
 <JobRef> may be: Title or Group/Title
 
@@ -21,36 +23,32 @@
 /read <JobRef>
 
 @create Jobs
+@set Jobs=!NO_COMMAND
 
-@@ can_nspemit removes NoSpoof info, and isn't necessary.
+@@ can_nspemit removes NoSpoof info, but isn't necessary.
 @power Jobs=can_nspemit
 
 &jobs Jobs=@@ Format: &jobs`<id>_<caption|data|body> ; @@ &jobs`<id>_data =group_id|owner|ctime|...
 &groups Jobs=@@ Format: &groups`<id>=Name|add_jobs_lock|see_jobs_lock|modify_jobs_lock|Description
 
-&cmd_
-
+@@ &message Jobs=@nspemit %0=udefault(message_%1,...
 &message_en_prefix Jobs=JOBS:%b
 &message_en_none_visible Jobs=No visible jobs matching "%0".
 &message_en_job_add_denied Jobs=You may not add jobs in group "%0".
 &message_en_job_see_denied Jobs=There is no group named "%0".
-&message_en_job_modify_denied Jobs=You may not modify jobs in group "%0".
-
-@@ Returns attr-list of jobs matching %1 that are visible to %0.
-&fun_lookup Jobs=u(me/fun_lookup_[switch(%0,*/*,with,without)]_group,%0,%1)
-&fun_lookup_with_group Jobs=
-&fun_lookup_without_group Jobs=
+@@ Add ambiguous/zero determination
+&message_en_job_act_denied Jobs=You may not modify jobs in group "%0".
 
 &fun_ambiguity Jobs=switch(words(%0),>1,#-1 ambiguous,0,#-1 nonexistent,1,%0)
 
 &cmd_take1 Jobs=$^\+jobs?/take (.+)$:@include me/permission_see=%#,before(%1,/); @include me/permission_act,%#,%1;@include me/do_take=%#,%1
 
 @@ Can %0 see group %1 ?
-&permission_see Jobs=@assert setr(0,cor(u(fun_empty_string,%1),u(fun_ambiguity,u(db,retrieve_group,%0,%1))))={@include me/message,%0,see_denied,%q0,%1}
+&permission_see Jobs=@assert setr(0,cor(u(fun_empty_string,%1),u(fun_ambiguity,u(db,retrieve_group,%0,%1))))={@include me/message,%0,job_see_denied,%q0,%1}
 &fun_empty_string Jobs=not(strlen(%0))
 
 @@ Can %0 act on possibly-non-unique job %1 ?
-&permission_act Jobs=@assert setr(0,u(fun_ambiguity,u(db,retrieve_job,%0,%1)))={@include me/message,%0,act_denied,%q0,%1}
+&permission_act Jobs=@assert setr(0,u(fun_ambiguity,u(db,retrieve_job,%0,%1)))={@include me/message,%0,job_act_denied,%q0,%1}
 
 @@ Hook method for all DB calls. Will be used here to memoize.
 &db Jobs=u(me/db_%0,%1,%2,%3)
@@ -59,6 +57,7 @@
 &do_take Jobs=@include me/db_modify_job=
 
 @@ As %0, find all visible jobs matching jobref %1
+@@ TODO: Actually pass %0 and %1 in, and use them for processing :I
 &db_retrieve_job Jobs=letq(0,%0,filterbool(db__job_visible_filter,filter(db__job_group_filter,grepi(me,jobs`*_caption,%1))))
 &db__filter_job_group Jobs=strmatch(first(u(memoize,db__u_group,%q0,u(db__group_for_job,%0)),|),*%0*)
 &db__filter_job_visible Jobs=elements(u(memoize,db__u_group,%q0,u(db__group_for_job,%0)),1,|)
@@ -71,15 +70,15 @@ switch(%1,*/*,u(db_retrieve_job_without_group
 @@ |>Possibly filter to requested group
 
 @@ As %0, find all visible groups matching %1
-&db_retrieve_group Jobs=letq(0,%0,filter(me/db__private_retrieve_group_filter,lattr(me/groups`*)))
+&db_retrieve_group Jobs=letq(0,%0,filter(me/db__retrieve_group_filter,lattr(me/groups`*)))
 &db_set_job_taken Jobs=
 &db_set_job_rejected Jobs=
 &db_set_job_completed Jobs=
 &db_add_job Jobs=
 
 
-&db__private_retrieve_group_filter Jobs=u(db__private_retrieve_group_filter_inner,u(me/%0,%q0))
-&db__private_retrieve_group_filter_inner Jobs=@@TODO
+&db__retrieve_group_filter Jobs=u(db__retrieve_group_filter_inner,u(me/%0,%q0))
+&db__retrieve_group_filter_inner Jobs=@@TODO
 
 @@ Memoize calls to %0 with arguments %1-%9
-&memoize Jobs=u(%0,%1,%2,%3,%4,%5,%6,%7,%8,%9)
+&memoize Jobs=firstof(u(%0,%1,%2,%3,%4,%5,%6,%7,%8,%9)
