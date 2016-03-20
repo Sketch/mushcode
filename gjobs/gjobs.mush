@@ -33,6 +33,7 @@
 /reject <JobRef>
 /complete <JobRef>
 /read <JobRef>
+default command: +read
 
 @create Jobs
 @set Jobs=!NO_COMMAND
@@ -76,17 +77,41 @@
 &do_add Jobs=@include me/db_create_job
 
 @@ As %0, find all visible jobs matching jobref %1
-@@ Assertions: GROUP is unique
+@@ ASSUMPTION: GROUP in jobref %1 is unique
+@@ Returns either 'List' or 'Details' followed by %r and:
+@@  if 'List', a list of matching job data
+@@  if 'Details' the details for that single job ref.
+
 @@ TODO: Change priority - Get group, , then scan all jobs of that group with wildgrep(me,jobs`*_caption,GROUPID|*), -> map(edit) _DATA -> _CAPTION, -> filter[strmatch].
 @@ This does eliminate the "job search" feature of just typing in a name, but that isn't what this system is for anyway.
 &db_retrieve_job Jobs=
 
+@@ | get all group data sep%r
+@@ | exact_or_matching all groups 
+@@ | Filter to visible groups (with u_group)
+@@ | get ids of these
+@@ $> jobs
+@@ | make regexp u() ^([edit(%0,%r,|)])\\|
+@@ | get all jobs
+@@ |> switch(words()
+@@ |> return List if multi,
+@@  > get details if words()==1 
+
+u(db__retrieve_job_1,%0,u(db__retrieve_job_groups,%0,%1))
+
+&db__retrieve_job_groups Jobs=
+
 letq(executor,%0,group,before(%1,/),filter(db__filter_job_name,edit(wildgrep(me,jobs`*_data,
 
-u(db__retrieve_group_title
-&db__retrieve_group_title Jobs=first(u(memoize,db__u_group,%0,u(db,retrieve_group,%0,%1)),|)
+u(db__retrieve_group_title,%1)
 
 ),_DATA,_CAPTION)
+
+&db__exact_or_matching Jobs=firstof(filter(db__name_match_filter,%0,%r,%r,%1),filter(db__name_match_filter,%0,%r,%r,*%1*))
+&db__name_match_filter Jobs=strmatch(first(%0,|),%1)
+
+@@ Old
+&db__retrieve_group_title Jobs=first(u(memoize,db__u_group,%0,u(db,retrieve_group,%0,%1)),|)
 
 &db_retrieve_job Jobs=letq(executor,%0,group,before(%1,/),filterbool(db__job_visible_filter,filter(db__job_group_filter,grepi(me,jobs`*_caption,%1))))
 &db__filter_job_group      Jobs=u(db__filter_job_group_real,%q<executor>,%q<group>,%0)
@@ -96,10 +121,12 @@ u(db__retrieve_group_title
 &db__u_group Jobs=u(group`%1,%0)
 
 @@ As %0, get all group data for group names matching %1
-@@ Returns %r-separated list of data for all matching groups
-&db_retrieve_group Jobs=elements(edit(lattr(me/groups`*),GROUP`,),u(fun_exact_or_matching,map(db__group_name_mapper,u(db__visible_groups_for,%0)),%1),|,%b)
-&db__visible_groups_for Jobs=filter(db__visible_groups_for_filter,edit(lattr(me/groups`*),GROUP`,),|,%b,%0)
+@@ Returns 'List' followed by %r followed by a list of data for all matching groups
+&db_retrieve_group Jobs=List%r[u(db__exact_or_matching,u(db__visible_groups_for,%0),%1)]
+&db__visible_groups_for Jobs=filter(db__visible_groups_for_filter,edit(lattr(me/groups`*),%b,%r,GROUP`,),%r,%r,%0)
 &db__visible_groups_for_filter Jobs=elements(u(memoize,db__u_group,%1,%0),3,|)
+
+filter(db__name_match_filter
 &db__group_name_mapper Jobs=first(v(group`%0),|)
 &fun_exact_or_matching Jobs=firstof(matchall(%0,%1),matchall(%0,*%1*))
 
