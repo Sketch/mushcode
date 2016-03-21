@@ -77,10 +77,11 @@ default command: +read
 &do_add Jobs=@include me/db_create_job
 
 @@ As %0, find all visible jobs matching jobref %1
-@@ ASSUMPTION: GROUP in jobref %1 is unique
-@@ Returns either 'List' or 'Details' followed by %r and:
-@@  if 'List', a list of matching job data
-@@  if 'Details' the details for that single job ref.
+@@ Returns:
+@@  1. 'None' if no group or no jobs found
+@@  2. either 'List' or 'Details' followed by %r and:
+@@   2a. if 'List', a list of matching job data
+@@   2b. if 'Details' the details for that single job ref.
 
 
 @@ | get all group data sep%r
@@ -90,33 +91,41 @@ default command: +read
 @@ $> jobs
 @@ | make regexp u() ^([edit(%0,%r,|)])\\|
 @@ | get all jobs
+@@ | filter to matching jobs
 @@ |> switch(words()
 @@ |> return List if multi,
 @@  > get details if words()==1 
 
-&db_retrieve_job Jobs=u(db__retrieve_job_step_2,%0,%1,u(db_retrieve_group,%0,%1))
+&db_retrieve_job Jobs=u(db__retrieve_job_step_2,%0,%1,rest(u(db_retrieve_group,%0,%1),%r))
 
 @@ As %0, list all jobs matching %1 of visible group-data %2
-&db__retrieve_job_step_2 Jobs=u(db__retrieve_job_step_3,u(db__get_jobs_of_groups,%2)
-&db__get_jobs_of_groups Jobs=regrep(me,jobs`*,u(db__jobs_regexp,%0)
-&db__jobs_regexp Jobs=
+&db__retrieve_job_step_2 Jobs=switch(%2,,None, u(db__retrieve_job_step_3, u(db__mix_job_data,u(db__filter_by_job_caption,u(db__get_job_caption_attrs_from_group_datas,%2),%1)))) 
 
+&db__get_job_caption_attrs_from_group_datas Jobs=regrep(me,jobs`*_CAPTION,u(db__jobs_regexp,%0))
+&db__jobs_regexp Jobs=^\([edit(map(db__first_element_mapper,%0,%r),%r,%b)]\)\\|
 
-&db__retrieve_job_step_3 Jobs=switch(words(%0),>1,List%r%0,0,None,1,Details%r
+&db__filter_by_job_caption Jobs=elements(%0,u(db__exact_or_matching,iter(%0,v(##),%r,%r),rest(%1,/)),%r,%r)
+&db__mix_job_data Jobs=mix(db__map_job_data,%0,edit(%0,_CAPTION,_DATA),%r)
+&db__mix_job_data_mixer Jobs=[v(%0)]|[v(%1)]
 
-u(db__retrieve_job_1,%0,u(db__retrieve_job_groups,%0,%1))
-
-&db__retrieve_job_groups Jobs=
+&db__retrieve_job_step_3 Jobs=switch(words(%0,%b),>1,List%r[iter(%0,v(##),%b,%r)],0,None,1,Details%r
 
 @@ As %0, get all group data for group names matching %1
-@@ Returns 'List' followed by %r followed by a list of data for all matching groups
-&db_retrieve_group Jobs=u(db_retrieve_group_step_2,u(db__exact_or_matching,u(db__visible_groups_for,%0),%1))]
-&db__retrieve_group_step_2 Jobs=switch(words(%0,%r),>1,List%r%0,1,List%r%0,None)
-&db__visible_groups_for Jobs=filter(db__visible_groups_for_filter,edit(lattr(me/groups`*),%b,%r,GROUP`,),%r,%r,%0)
-&db__visible_groups_for_filter Jobs=elements(u(memoize,db__u_group,%1,%0),3,|)
+@@ Returns 'None', or 'List' followed by %r followed by a list of data for all matching groups
+&db_retrieve_group Jobs=u(db_retrieve_group_step_2,u(db__exact_first_or_matching,u(db__get_group_data_for_ids,%0,u(db__visible_group_ids_for,%0)),%1))]
 
-&db__group_name_mapper Jobs=first(v(group`%0),|)
-&fun_exact_or_matching Jobs=firstof(matchall(%0,%1),matchall(%0,*%1*))
+&db__retrieve_group_step_2 Jobs=switch(words(%0,%r),>1,List%r%0,1,List%r%0,None)
+
+&db__visible_group_ids_for Jobs=filter(db__visible_group_ids_for_filter,edit(lattr(me/groups`*),%b,%r,GROUP`,),%r,%r,%0)
+&db__visible_groups_ids_for_filter Jobs=elements(u(memoize,db__u_group,%1,%0),3,|)
+&db__get_group_data_for_ids Jobs=iter(%1,u(memoize,db__u_group,%0,##),%r,%r)
+
+@@ Minor stuff
+&db__exact_or_matching Jobs=elements(%0,u(db__exact_or_matching_inner,map(db__first_element_mapper,%0),%1),%r,%r)
+&db__first_element_mapper Jobs=first(%0,|)
+&db__exact_or_matching_inner Jobs=firstof(matchall(%0,%1),matchall(%0,*%1*))
+
+&db__u_group Jobs=u(group`%1,%0)
 
 &db_set_job_taken Jobs=
 &db_set_job_rejected Jobs=
