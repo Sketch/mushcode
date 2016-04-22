@@ -42,7 +42,7 @@ default command: +read
 @power Jobs=can_nspemit
 
 &jobs Jobs=@@ Format: &jobs`<id>_<caption|data|body> ; @@ &jobs`<id>_data =group_id|owner|ctime|...
-&groups Jobs=@@ Format: &groups`<id>=Name|add_jobs_lock|see_jobs_lock|modify_jobs_lock|Description
+&groups Jobs=@@ Format: &groups_<id>=Name|add_jobs_lock|see_jobs_lock|modify_jobs_lock|Description
 
 @@ &message Jobs=@nspemit %0=udefault(message_%1,...
 &message_en_prefix Jobs=JOBS:%b
@@ -104,7 +104,7 @@ default command: +read
 &db__get_job_caption_attrs_from_group_datas Jobs=regrep(me,jobs`*_CAPTION,u(db__jobs_regexp,%0))
 &db__jobs_regexp Jobs=^\([edit(map(db__first_element_mapper,%0,%r),%r,%b)]\)\\|
 
-&db__filter_by_job_caption Jobs=elements(%0,u(db__exact_or_matching,iter(%0,v(##),%r,%r),rest(%1,/)),%r,%r)
+&db__filter_by_job_caption Jobs=elements(%0,u(db__exact_first_or_matching,iter(%0,v(##),%r,%r),rest(%1,/)),%r,%r)
 &db__mix_job_data Jobs=mix(db__map_job_data,%0,edit(%0,_CAPTION,_DATA),%r)
 &db__mix_job_data_mixer Jobs=[v(%0)]|[v(%1)]
 
@@ -112,20 +112,21 @@ default command: +read
 
 @@ As %0, get all group data for group names matching %1
 @@ Returns 'None', or 'List' followed by %r followed by a list of data for all matching groups
-&db_retrieve_group Jobs=u(db_retrieve_group_step_2,u(db__exact_first_or_matching,u(db__get_group_data_for_ids,%0,u(db__visible_group_ids_for,%0)),%1))]
+&db_retrieve_group Jobs=u(db__retrieve_group_step_2,u(db__exact_first_or_matching,u(db__get_group_data_for_ids,%0,u(db__visible_group_ids_for,%0)),%1))
 
 &db__retrieve_group_step_2 Jobs=switch(words(%0,%r),>1,List%r%0,1,List%r%0,None)
 
-&db__visible_group_ids_for Jobs=filter(db__visible_group_ids_for_filter,edit(lattr(me/groups`*),%b,%r,GROUP`,),%r,%r,%0)
-&db__visible_groups_ids_for_filter Jobs=elements(u(memoize,db__u_group,%1,%0),3,|)
-&db__get_group_data_for_ids Jobs=iter(%1,u(memoize,db__u_group,%0,##),%r,%r)
+&db__visible_group_ids_for Jobs=letq(inputname,%0,filter(db__visible_group_ids_for_filter,edit(lattr(me/groups_*),%b,%r,GROUPS_,),%r,%r))
+&db__visible_group_ids_for_filter Jobs=elements(u(memoize,db__u_group,%q<inputname>,%0),3,|)
+&db__get_group_data_for_ids Jobs=iter(%1,##|[u(memoize,db__u_group,%0,##)],%r,%r)
 
 @@ Minor stuff
-&db__exact_or_matching Jobs=elements(%0,u(db__exact_or_matching_inner,map(db__first_element_mapper,%0),%1),%r,%r)
+&db__exact_first_or_matching Jobs=elements(%0,u(db__exact_first_or_matching_inner,map(db__second_element_mapper,%0,%r),%1),%r,%r)
 &db__first_element_mapper Jobs=first(%0,|)
-&db__exact_or_matching_inner Jobs=firstof(matchall(%0,%1),matchall(%0,*%1*))
+&db__second_element_mapper Jobs=elements(%0,2,|)
+&db__exact_first_or_matching_inner Jobs=edit(firstof(matchall(%0,%1,%r),matchall(%0,*%1*,%r)),%r,%b)
 
-&db__u_group Jobs=u(group`%1,%0)
+&db__u_group Jobs=u(groups_%1,%0)
 
 &db_set_job_taken Jobs=
 &db_set_job_rejected Jobs=
@@ -134,9 +135,18 @@ default command: +read
 
 
 @@ Memoize calls to %0 with arguments %1-%9
-&memoize Jobs=firstof(u(%0,%1,%2,%3,%4,%5,%6,%7,%8,%9)
+&memoize Jobs=u(%0,%1,%2,%3,%4,%5,%6,%7,%8,%9)
 
 @@ TESTING
-&groups`Cool_Kids_Club Jobs=Cool Kids Club|0|0|0|Nobody is cool enough.
-&groups`Building_Board Jobs=Building Board|1|1|[orflags(%0,Wr)]|Build requests go here.
-&groups`Admin Jobs=Admin Board|[orflags(%0,Wr)]|[orflags(%0,Wr)]|[orflags(%0,Wr)]|Admin only.
+@@ Assumption: You are a wizard
+@@ Reminder Groups Add/See/Mod
+&groups_Cool_Kids_Club Jobs=Cool Kids Club|0|0|0|Nobody is cool enough.
+&groups_Building_Board Jobs=Building Board|1|1|[strmatch(#-1,%0)]|Build requests go here.
+&groups_Admin Jobs=Admin Board|[orflags(%0,Wr)]|[orflags(%0,Wr)]|[orflags(%0,Wr)]|Admin only.
+
+KILT START
+KILT None=u(jobs/db_retrieve_group,%#,Spacejam)
+KILT List%rADMIN|Admin Board|1|1|1|Admin Only.%rBUILDING_BOARD|Building Board|1|1|0|Build requests go here.=u(jobs/db_retrieve_group,%#,Board)
+KILT CHECK
+@wipe Jobs/groups_*
+
