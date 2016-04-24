@@ -58,6 +58,8 @@ default command: +read
 &cmd_add3 Jobs=$^\+jobs?/(?\:add|new) ([^=/]+)[/=]([^=/]+)[/=](.+)$:@include me/include_groupjob=%#,%1/%2; @include me/permission_create,%#,%1/%2;@include me/do_add=%#,%1/%2,%3
 &cmd_take1 Jobs=$^\+jobs?/take (.+)$:@include me/include_groupjob=%#,%1;@include me/permission_see=%#,before(%1,/); @include me/permission_act,%#,%1;@include me/do_take=%#,%1
 
+@set jobs/cmd_*=regexp
+
 @@ TODO: strmatch(%1,nonspace/nonspace)
 &include_groupjob Jobs=@assert regmatch(%1,v(regexp_groupjob))={@include me/message=%0,groupjob,%1}
 &regexp_groupjob Jobs=\S+/\S+
@@ -76,45 +78,38 @@ default command: +read
 &do_take Jobs=@include me/db_set_job_taken
 &do_add Jobs=@include me/db_create_job
 
-@@ As %0, find all visible jobs matching jobref %1
+@@ As %0, get all visible job data matching jobref %1
 @@ Returns:
 @@  1. 'None' if no group or no jobs found
 @@  2. either 'List' or 'Details' followed by %r and:
 @@   2a. if 'List', a list of matching job data
 @@   2b. if 'Details' the details for that single job ref.
 
-
-@@ | get all group data sep%r
-@@ | exact_or_matching all groups 
-@@ | Filter to visible groups (with u_group)
-@@ | get ids of these
-@@ $> jobs
-@@ | make regexp u() ^([edit(%0,%r,|)])\\|
-@@ | get all jobs
-@@ | filter to matching jobs
-@@ |> switch(words()
-@@ |> return List if multi,
-@@  > get details if words()==1 
-
-&db_retrieve_job Jobs=u(db__retrieve_job_step_2,%0,%1,rest(u(db_retrieve_group,%0,%1),%r))
+&db_retrieve_job Jobs=u(db__retrieve_job_step_2,%0,switch(%1,*/*,after(%1,/),%1),rest(u(db_retrieve_group,%0,switch(%1,*/*,before(%1,/),,)),%r))
 
 @@ As %0, list all jobs matching %1 of visible group-data %2
-&db__retrieve_job_step_2 Jobs=switch(%2,,None, u(db__retrieve_job_step_3, u(db__mix_job_data,u(db__filter_by_job_caption,u(db__get_job_caption_attrs_from_group_datas,%2),%1)))) 
+&db__retrieve_job_step_2 Jobs=switch(%2,,None, u(db__retrieve_job_step_3, u(db__filter_by_job_caption,u(db__get_job_caption_attrs_from_group_datas,%2),%1))) 
 
-&db__get_job_caption_attrs_from_group_datas Jobs=regrep(me,jobs`*_CAPTION,u(db__jobs_regexp,%0))
-&db__jobs_regexp Jobs=^\([edit(map(db__first_element_mapper,%0,%r),%r,%b)]\)\\|
+&db__get_job_caption_attrs_from_group_datas Jobs=edit(regrep(me,jobs`*_DATA,u(db__jobs_regexp,%0)),_DATA,_CAPTION,%b,%r)
+&db__jobs_regexp Jobs=^\([edit(map(db__first_element_mapper,%0,%r),%r,|)]\)\\|
 
-&db__filter_by_job_caption Jobs=elements(%0,u(db__exact_first_or_matching,iter(%0,v(##),%r,%r),rest(%1,/)),%r,%r)
-&db__mix_job_data Jobs=mix(db__map_job_data,%0,edit(%0,_CAPTION,_DATA),%r)
+@@ %0 - job`<id>_CAPTION %r-list. %1-JobName
+&db__filter_by_job_caption Jobs=elements(%0,u(db__exact_first_or_matching_inner,iter(%0,first(v(##),|),%r,%r),%1),%r,%r)
+
+&db__retrieve_job_step_3 Jobs=switch(words(%0,%r),>1,List%r[u(db__mix_job_data,%0)],0,None,1,Details%r[u(db__detail_data,%0)]
+&db__mix_job_data Jobs=mix(db__mix_job_data_mixer,edit(%0,_CAPTION,_DATA),%0,%r)
 &db__mix_job_data_mixer Jobs=[v(%0)]|[v(%1)]
+&db__detail_data Jobs=[v(%0)]%r[v(edit(%0,_CAPTION,_DATA))]
 
-&db__retrieve_job_step_3 Jobs=switch(words(%0,%b),>1,List%r[iter(%0,v(##),%b,%r)],0,None,1,Details%r
 
-@@ As %0, get all group data for group names matching %1
-@@ Returns 'None', or 'List' followed by %r followed by a list of data for all matching groups
+@@ As %0, get all visible group data for group names matching %1
+@@ Returns 'None' for zero-length list, or
+@@ 'Details' followed by %r followed by data for the only matching group, or
+@@ 'List' followed by %r followed by a list of data for all matching groups
+
 &db_retrieve_group Jobs=u(db__retrieve_group_step_2,u(db__exact_first_or_matching,u(db__get_group_data_for_ids,%0,u(db__visible_group_ids_for,%0)),%1))
 
-&db__retrieve_group_step_2 Jobs=switch(words(%0,%r),>1,List%r%0,1,List%r%0,None)
+&db__retrieve_group_step_2 Jobs=switch(words(%0,%r),>1,List%r%0,1,Details%r%0,None)
 
 &db__visible_group_ids_for Jobs=letq(inputname,%0,filter(db__visible_group_ids_for_filter,edit(lattr(me/groups_*),%b,%r,GROUPS_,),%r,%r))
 &db__visible_group_ids_for_filter Jobs=elements(u(memoize,db__u_group,%q<inputname>,%0),3,|)
@@ -124,7 +119,7 @@ default command: +read
 &db__exact_first_or_matching Jobs=elements(%0,u(db__exact_first_or_matching_inner,map(db__second_element_mapper,%0,%r),%1),%r,%r)
 &db__first_element_mapper Jobs=first(%0,|)
 &db__second_element_mapper Jobs=elements(%0,2,|)
-&db__exact_first_or_matching_inner Jobs=edit(firstof(matchall(%0,%1,%r),matchall(%0,*%1*,%r)),%r,%b)
+&db__exact_first_or_matching_inner Jobs=firstof(matchall(%0,%1,%r,%b),matchall(%0,*%1*,%r,%b))
 
 &db__u_group Jobs=u(groups_%1,%0)
 
@@ -140,13 +135,43 @@ default command: +read
 @@ TESTING
 @@ Assumption: You are a wizard
 @@ Reminder Groups Add/See/Mod
+@@ &jobs Jobs=@@ Format: &jobs`<id>_<caption|data|body> ; @@ &jobs`<id>_data =group_id|owner|ctime|...
 &groups_Cool_Kids_Club Jobs=Cool Kids Club|0|0|0|Nobody is cool enough.
 &groups_Building_Board Jobs=Building Board|1|1|[strmatch(#-1,%0)]|Build requests go here.
 &groups_Admin Jobs=Admin Board|[orflags(%0,Wr)]|[orflags(%0,Wr)]|[orflags(%0,Wr)]|Admin only.
+&jobs`4_caption Jobs=Wait What
+&jobs`4_data Jobs=COOL_KIDS_CLUB|#555:123|Fake Date Data
+&jobs`4_body Jobs=How'd this even get here, dude?
+&jobs`q1_caption Jobs=A Golden Castle
+&jobs`q1_data Jobs=BUILDING_BOARD|#24:123|Fake Date Data
+&jobs`q1_body Jobs=Please build Sneaker a golden castle off of Main and Oak street. Thank you!
+&jobs`t4_caption Jobs=Yveltal Road
+&jobs`t4_data Jobs=BUILDING_BOARD|#5:123|Fake Date Data
+&jobs`t4_body Jobs=Hey, could somebody finish building Yveltal Road off the Ashen Valley?
+&jobs`aa_caption Jobs=ROFL proposal
+&jobs`aa_data Jobs=ADMIN|#5:123|Fake Date Data
+&jobs`aa_body Jobs=Wow guyz check out this awesome link: https://example.com
+&jobs`kk_caption Jobs=Theme change proposal
+&jobs`kk_data Jobs=ADMIN|#5:123|Fake Date Data
+&jobs`kk_body Jobs=I think removing Spirit-type would be a good idea. Ghost alone is enough. What do you think? --A
 
+
+&kilt Jobs=$KILT *:@@ Stub
 KILT START
+@@ Groups API
 KILT None=u(jobs/db_retrieve_group,%#,Spacejam)
 KILT List%rADMIN|Admin Board|1|1|1|Admin Only.%rBUILDING_BOARD|Building Board|1|1|0|Build requests go here.=u(jobs/db_retrieve_group,%#,Board)
+KILT List%rADMIN|Admin Board|1|1|1|Admin Only.%rBUILDING_BOARD|Building Board|1|1|0|Build requests go here.=u(jobs/db_retrieve_group,%#,)
+@@ Jobs API
+KILT JOBS`4_CAPTION%rJOBS`AA_CAPTION%rJOBS`KK_CAPTION=u(jobs/db__get_job_caption_attrs_from_group_datas,ADMIN%RCOOL_KIDS_CLUB)
+KILT None=u(jobs/db_retrieve_job,%#,BogusText)
+KILT List%rADMIN|#5:123|Fake Date Data|ROFL proposal%rADMIN|#5:123|Fake Date Data|Theme change proposal=u(jobs/db_retrieve_job,%#,admin/Proposal)
+KILT JOBS`AA_CAPTION=u(jobs/db__filter_by_job_caption,JOBS`AA_CAPTION%rJOBS`KK_CAPTION,ROFL)
+
+KILT Details%rTheme change proposal%rADMIN|#5:123|Fake Date Data=u(jobs/db_retrieve_job,%#,admin/Theme)
+
 KILT CHECK
 @wipe Jobs/groups_*
+@wipe Jobs/jobs`*
+@wipe Jobs/kilt
 
