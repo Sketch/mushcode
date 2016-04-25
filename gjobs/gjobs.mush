@@ -3,6 +3,32 @@
 @@
 @@ Description: An easy-to-hack +jobs system
 @@
+@@ Features:
+@@ - Group-based permissions
+@@ - Groups are just attributes, so adding is easy
+@@ - Coded for easy hacking and reading
+@@ - Small codebase, minimalistic interface
+@@ - A few automated tests (better than nothing)
+
+@@ Usage reference:
+@@  There is no interface for managing groups.
+@@
+@@  <JobRef> may be: Title or Group/Title
+@@  Default command is +read
+@@  Permissions needed:
+@@  ,----- Create job
+@@  |,---- See group
+@@  ||,--- Modify job
+@@ [-S-] Read job details:      /read <JobRef>
+@@ [---] List groups:           /list
+@@ [---] List matching groups:  /list <group>
+@@ [---] List matching jobs:    /list <JobRef>
+@@ [CS-] Add job to group:      /add <group>=<caption>/<body>
+@@ [CS-] Add job to group:      /add <group>/<caption>=<body>
+@@ [-SM] Begin working:         /take <JobRef>
+@@ [-SM] Decline job:           /reject <JobRef>
+@@ [-SM] Mark job as complete:  /complete <JobRef>
+
 @@ Hacking:
 @@
 @@ Jobs and Groups are coded as their own layer, to allow changing to SQL.
@@ -12,28 +38,22 @@
 @@ &db_* are functions that query the database
 @@ &db_set_* are @includes that modify the database
 
-@@ Captions cannot contain newlines
-@@ Captions cannot contain newlines
+@@ Captions cannot contain newlines nor |
 @@ Groups data cannot contain newlines
+@@ Group name cannot contain newlines, nor |, nor /
 
 @@ Todo: User interface data modeling
-@@ Todo: Enforce valid job names and group names with nice error message
+@@ Todo: Change commands to (.+) instead and enforce valid job names and group names with nice error message
 @@ Todo: Improve the syntax error messages on /add
-@@ Todo: Warn on %# used in group attribute. (with &disable_warning_group Jobs=1)
+@@ Todo: Warn when %# used in group attribute. (with &disable_warning_group Jobs=1)
 @@ Todo?: Works on small screens
+@@ Todo: /archive <JobRef> to move to &archive` tree
+@@ Todo: Make data and command objects separable
+@@ Todo: Report errors if command doesn't match (use scan())
 
-<JobRef> may be: Title or Group/Title
-
-/list
-/list <group>
-/list <JobRef>
-/add <group>=<caption>/<body>
-/add <group>/<caption>=<body>
-/take <JobRef>
-/reject <JobRef>
-/complete <JobRef>
-/read <JobRef>
-default command: +read
+@@ @@@@@@@@
+@@ Section:  Non-database code
+@@ @@@@@@@@
 
 @create Jobs
 @set Jobs=!NO_COMMAND
@@ -44,46 +64,69 @@ default command: +read
 &jobs Jobs=@@ Format: &jobs`<id>_<caption|data|body> ; @@ &jobs`<id>_data =group_id|owner|ctime|...
 &groups Jobs=@@ Format: &groups_<id>=Name|add_jobs_lock|see_jobs_lock|modify_jobs_lock|Description
 
-@@ &message Jobs=@nspemit %0=udefault(message_%1,...
+@@ Message: %0=target, %1=name of message, %2--%9 additional arguments
+&message Jobs=@nspemit %0=[u(me/message_[default(%0/lang,en)]_prefix)][udefault(me/message_[default(%0/lang,en)]_%1,Message missing. Please contact a translator.,%2,%3,%4,%5,%6,%7,%8,%9)]
+
 &message_en_prefix Jobs=JOBS:%b
+&message_en_no_matching_group_name Jobs=There is no group named "%1".
+&message_en_ambiguous_group_name Jobs=Please type more of "%1" to clarify which group you meant: %2
+&message_en_job_added Jobs=Added job "%2" to group "%1".
+&message_en_cannot_create Jobs=You may not add jobs to group "%0".
+&message_en_cannot_modify Jobs=You may not modify jobs in group "%0".
+
+@@ Scrap
 &message_en_none_visible Jobs=No visible jobs matching "%0".
-&message_en_job_add_denied Jobs=You may not add jobs in group "%0".
-&message_en_job_see_denied Jobs=There is no group named "%0".
 @@ Add ambiguous/zero determination
-&message_en_job_act_denied Jobs=You may not modify jobs in group "%0".
 &message_en_groupjob Jobs=Please specify jobref in the form of "group/title". (You wrote "%1")
 
 &fun_ambiguity Jobs=switch(words(%0),>1,#-1 ambiguous,0,#-1 nonexistent,1,%0)
 
-&cmd_add3 Jobs=$^\+jobs?/(?\:add|new) ([^=/]+)[/=]([^=/]+)[/=](.+)$:@include me/include_groupjob=%#,%1/%2; @include me/permission_create,%#,%1/%2;@include me/do_add=%#,%1/%2,%3
-&cmd_take1 Jobs=$^\+jobs?/take (.+)$:@include me/include_groupjob=%#,%1;@include me/permission_see=%#,before(%1,/); @include me/permission_act,%#,%1;@include me/do_take=%#,%1
+&cmd_list0 Jobs=$^\+jobs?/list$:@nspemit %#=u(display_group_list,u(db,retrieve_group,%#,@@(nothing)))
+&cmd_list1 Jobs=$^\+jobs?/list ([^/]+)$: @include me/interrupt_if_no_group=%#,%1; @nspemit %#=u(display_group_list,u(db,retrieve_group,%#,%1)
+&cmd_list2 Jobs=$^\+jobs?/list ([^/]+)/(.+)$: @include me/interrupt_if_no_group=%#,%1; @nspemit %#=u(display_jobref_list,u(db,retrieve_jobs,%#,%1/%2))
+
+&cmd_read2 Jobs=$^\+jobs/read ([^/]+)/(.+)$: @include me/interrupt_if_not_single_group=%#,%1 ; @@ Branch to cmd_list2 if multiple jobs
+
+&cmd_take2 Jobs=$^\+jobs/take ([^/]+)/(.+)$: @include me/interrupt_if_not_single_group=%#,%1; @include me/interrupt_if_cannot_modify=%#,%1; @include me/do_take=%#,%1/%2
+&cmd_reject2 Jobs=$^\+jobs/reject ([^/]+)/(.+)$: @include me/interrupt_if_not_single_group=%#,%1; @include me/interrupt_if_cannot_modify=%#,%1; @include me/do_reject=%#,%1/%2
+&cmd_complete2 Jobs=$^\+jobs/complete ([^/]+)/(.+)$: @include me/interrupt_if_not_single_group=%#,%1; @include me/interrupt_if_cannot_modify=%#,%1; @include me/do_complete=%#,%1/%2
+
+&cmd_add3 Jobs=$^\+jobs?/(?\:add|new) ([^=/]+)[/=]([^=/]+)[/=](.+)$: @include me/interrupt_if_not_single_group=%#,%1; @include me/interrupt_if_cannot_create=%#,%1; @include me/do_add=%#,%1,%2,%3
 
 @set jobs/cmd_*=regexp
 
-@@ TODO: strmatch(%1,nonspace/nonspace)
-&include_groupjob Jobs=@assert regmatch(%1,v(regexp_groupjob))={@include me/message=%0,groupjob,%1}
-&regexp_groupjob Jobs=\S+/\S+
+&do_add Jobs=@include me/db_affect_add=%0,first(u(db,retrieve_group,%0,%1),|),%2,%3; @include me/message=%0,job_added,elements(u(db,retrieve_group,%0,%1),2,|),%2,%q<newjobid>
 
-@@ Can %0 see group %1 ?
-&permission_see Jobs=@assert setr(0,u(fun_ambiguity,u(db,retrieve_group,%0,%1)))={@include me/message=%0,job_see_denied,%q0,%1}
-&fun_empty_string Jobs=not(strlen(%0))
+&db_affect_add Jobs=think New Job ID: [setr(newjobid,u(db__new_job_id))]; &jobs`%q<newjobid>_data me=%1|[objid(%0)]|[secs()]; &jobs`%q<newjobid>_caption me=%2; &jobs`%q<newjobid>_body me=%3 
 
-@@ Can %0 act on possibly-non-unique job %1 ?
-&permission_act Jobs=@assert setr(0,u(fun_ambiguity,u(db,retrieve_job,%0,%1)))={@include me/message=%0,job_act_denied,%q0,%1}
+&interrupt_if_not_single_group Jobs=@include me/interrupt_if_no_group=%0,%1; @include me/interrupt_if_ambiguous_group=%0,%1
+
+&interrupt_if_no_group Jobs=@break strmatch(u(fun_ambiguity,u(db,retrieve_group,%0,%1)),#-1 nonexistent)={@include me/message=%0,no_matching_group_name,%1}
+
+&interrupt_if_ambiguous_group Jobs=@break strmatch(u(fun_ambiguity,u(db,retrieve_group,%0,%1)))={@include me/message=%0,ambiguous_group_name,%1}
+
+&interrupt_if_cannot_create Jobs=@break elements(u(db,retrieve_group,%0,%1),3,|)={@include me/message=%0,cannot_create,u(db,retrieve_group,%0,%1)}
+
+&interrupt_if_cannot_modify Jobs=@break elements(u(db,retrieve_group,%0,%1),5,|)={@include me/message=%0,cannot_modify,u(db,retrieve_group,%0,%1)}
+
+&display_group_list Jobs=[ljust(Group Name,20)]Description%r[ljust(-,20,-)][ljust(-,20,-)]%r[iter(rest(%0,%r),ljust(elements(%i0,2,|),20)[elements(%i0,6,|)],%r,%r)]%r
+
+
+@@ @@@@@@@@
+@@ Section: Database API
+@@ @@@@@@@@
 
 @@ Hook method for all DB calls. Will be used here to memoize.
 &db Jobs=u(me/db_%0,%1,%2,%3)
-
-@@ %# takes non-ambiguous jobref %1.
-&do_take Jobs=@include me/db_set_job_taken
-&do_add Jobs=@include me/db_create_job
 
 @@ As %0, get all visible job data matching jobref %1
 @@ Returns:
 @@  1. 'None' if no group or no jobs found
 @@  2. either 'List' or 'Details' followed by %r and:
 @@   2a. if 'List', a list of matching job data
+@@       list format is: DATA|CAPTION
 @@   2b. if 'Details' the details for that single job ref.
+@@       detail format is: CAPTION%rDATA%rBODY
 
 &db_retrieve_job Jobs=u(db__retrieve_job_step_2,%0,switch(%1,*/*,after(%1,/),%1),rest(u(db_retrieve_group,%0,switch(%1,*/*,before(%1,/),,)),%r))
 
@@ -106,6 +149,7 @@ default command: +read
 @@ Returns 'None' for zero-length list, or
 @@ 'Details' followed by %r followed by data for the only matching group, or
 @@ 'List' followed by %r followed by a list of data for all matching groups
+@@  Data is in format: ID|Name|Create|See|Modify|Description
 
 &db_retrieve_group Jobs=u(db__retrieve_group_step_2,u(db__exact_first_or_matching,u(db__get_group_data_for_ids,%0,u(db__visible_group_ids_for,%0)),%1))
 
@@ -139,9 +183,9 @@ default command: +read
 &groups_Cool_Kids_Club Jobs=Cool Kids Club|0|0|0|Nobody is cool enough.
 &groups_Building_Board Jobs=Building Board|1|1|[strmatch(#-1,%0)]|Build requests go here.
 &groups_Admin Jobs=Admin Board|[orflags(%0,Wr)]|[orflags(%0,Wr)]|[orflags(%0,Wr)]|Admin only.
-&jobs`4_caption Jobs=Wait What
-&jobs`4_data Jobs=COOL_KIDS_CLUB|#555:123|Fake Date Data
-&jobs`4_body Jobs=How'd this even get here, dude?
+&jobs`2_caption Jobs=Wait What
+&jobs`2_data Jobs=COOL_KIDS_CLUB|#555:123|Fake Date Data
+&jobs`2_body Jobs=How'd this even get here, dude?
 &jobs`q1_caption Jobs=A Golden Castle
 &jobs`q1_data Jobs=BUILDING_BOARD|#24:123|Fake Date Data
 &jobs`q1_body Jobs=Please build Sneaker a golden castle off of Main and Oak street. Thank you!
@@ -163,7 +207,7 @@ KILT None=u(jobs/db_retrieve_group,%#,Spacejam)
 KILT List%rADMIN|Admin Board|1|1|1|Admin Only.%rBUILDING_BOARD|Building Board|1|1|0|Build requests go here.=u(jobs/db_retrieve_group,%#,Board)
 KILT List%rADMIN|Admin Board|1|1|1|Admin Only.%rBUILDING_BOARD|Building Board|1|1|0|Build requests go here.=u(jobs/db_retrieve_group,%#,)
 @@ Jobs API
-KILT JOBS`4_CAPTION%rJOBS`AA_CAPTION%rJOBS`KK_CAPTION=u(jobs/db__get_job_caption_attrs_from_group_datas,ADMIN%RCOOL_KIDS_CLUB)
+KILT JOBS`2_CAPTION%rJOBS`AA_CAPTION%rJOBS`KK_CAPTION=u(jobs/db__get_job_caption_attrs_from_group_datas,ADMIN%RCOOL_KIDS_CLUB)
 KILT None=u(jobs/db_retrieve_job,%#,BogusText)
 KILT List%rADMIN|#5:123|Fake Date Data|ROFL proposal%rADMIN|#5:123|Fake Date Data|Theme change proposal=u(jobs/db_retrieve_job,%#,admin/Proposal)
 KILT JOBS`AA_CAPTION=u(jobs/db__filter_by_job_caption,JOBS`AA_CAPTION%rJOBS`KK_CAPTION,ROFL)
