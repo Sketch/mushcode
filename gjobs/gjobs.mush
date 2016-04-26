@@ -148,7 +148,7 @@
 &db__retrieve_job_step_3 Jobs=switch(words(%1,%r),>1,List%r[u(db__mix_job_data,%0,%1)],0,None,1,Details%r[u(db__detail_data,%0,%1)]
 &db__mix_job_data Jobs=mix(db__mix_job_data_mixer,regeditall(%1,.+,%0),edit(%1,_CAPTION,_DATA),%1,%r)
 &db__mix_job_data_mixer Jobs=[insert(v(%1),2,u(db__get_groupname_for_jobattr,%0,%1),|)]|[v(%2)]
-&db__detail_data Jobs=[u(db__get_groupname_for_jobattr,%0,%1)]%r[v(%1)]%r[v(edit(%1,_CAPTION,_DATA))]
+&db__detail_data Jobs=[u(db__get_groupname_for_jobattr,%0,%1)]%r[v(%1)]%r[v(edit(%1,_CAPTION,_DATA))]%r[v(edit(%1,_CAPTION,_BODY))]
 
 &db__get_groupname_for_jobattr Jobs=first(u(memoize,db__u_group,%0,first(v(regedit(%1,_\[^_\]+$,_DATA)),|)),|)
 
@@ -204,7 +204,7 @@
 &jobs`aa_body Jobs=Wow guyz check out this awesome link: https://example.com
 &jobs`kk_caption Jobs=Theme change proposal
 &jobs`kk_data Jobs=ADMIN|#5:123|Fake Date Data
-&jobs`kk_body Jobs=I think removing Spirit-type would be a good idea. Ghost alone is enough. What do you think? --A
+&jobs`kk_body Jobs=Remove Spirit-Type. Keep Ghost. What do you think? --A
 
 
 &kilt Jobs=$KILT *:@@ Stub
@@ -219,7 +219,7 @@ KILT None=u(jobs/db_retrieve_job,%#,BogusText)
 KILT List%rADMIN|Admin Board|#5:123|Fake Date Data|ROFL proposal%rADMIN|Admin Board|#5:123|Fake Date Data|Theme change proposal=u(jobs/db_retrieve_job,%#,admin/Proposal)
 KILT JOBS`AA_CAPTION=u(jobs/db__filter_by_job_caption,JOBS`AA_CAPTION%rJOBS`KK_CAPTION,ROFL)
 
-KILT Details%rAdmin Board%rTheme change proposal%rADMIN|#5:123|Fake Date Data=u(jobs/db_retrieve_job,%#,admin/Theme)
+KILT Details%rAdmin Board%rTheme change proposal%rADMIN|#5:123|Fake Date Data%rRemove Spirit-Type. Keep Ghost. What do you think? --A=u(jobs/db_retrieve_job,%#,admin/Theme)
 
 KILT CHECK
 
