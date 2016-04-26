@@ -51,6 +51,7 @@
 @@ Todo: /archive <JobRef> to move to &archive` tree
 @@ Todo: Make data and command objects separable
 @@ Todo: Report errors if command doesn't match (use scan())
+@@ Todo: Simplifiy data backend by just spitting out jobs`<id>_* for detail view
 
 @@ @@@@@@@@
 @@ Section:  Non-database code
@@ -77,23 +78,12 @@
 
 &display_group_list Jobs=[ljust(Group Name,20)]Description%r[ljust(-,20,-)][ljust(-,20,-)]%r[iter(rest(%0,%r),ljust(elements(%i0,2,|),20)[elements(%i0,6,|)],%r,%r)]%r
 
-&display_multijob_list Jobs=[ljust(Group Name,20)]Job Name%r[ljust(-,20,-)][ljust(-,20,-)]%r
-[switch(%0,Details*,ljust(elements(%0,2,%r),21)[left(,21)],,List*,
-[iter(rest(%0,%r),,%r,%r)]
+&display_multijob_list Jobs=Group Name/Job Name%r[repeat(-,20)]%r[u(display_multijob_list_[first(%0,%r)],%0)]
+&display_multijob_list_list Jobs=iter(rest(%0,%r),elements(%i0,2,|)/[elements(%i0,6,|)],%r,%r)
+&display_multijob_list_details Jobs=first(rest(%0,%r),%r)/[elements(rest(%0,%r),2,%r)]
 
-&display_details Jobs=---Job---%r%0
+&display_details Jobs=---Job---%rGroup/Title: [elements(%0,2 3,%r,/)]%rPosted by: [name(elements(elements(%0,4,%r),2,|))]%rPosted at: [convsecs(elements(elements(%0,4,%r),3,|))]%rDescription: [extract(%0,5,999,%r)]%r---End---
 
-&do_display_details Jobs=@nspemit %0=u(display_details,u(db,retrieve_job,%0,%1))
-&do_display_groups Jobs=@nspemit %#=u(display_group_list,u(db,retrieve_group,%0,%1))
-&do_display_multijob Jobs=@nspemit %0=u(display_multijob_list,u(db,retrieve_job,%0,%1))
-
-
-@@ Scrap
-&message_en_none_visible Jobs=No visible jobs matching "%0".
-@@ Add ambiguous/zero determination
-&message_en_groupjob Jobs=Please specify jobref in the form of "group/title". (You wrote "%1")
-
-&fun_ambiguity Jobs=switch(words(%0),>1,#-1 ambiguous,0,#-1 nonexistent,1,%0)
 
 &cmd_list0 Jobs=$^\+jobs?/list$:@nspemit %#=u(display_group_list,u(db,retrieve_group,%#,@@(nothing)))
 &cmd_list1 Jobs=$^\+jobs?/list ([^/]+)$: @include me/interrupt_if_no_group=%#,%1; @include me/do_display_groups=%#,%1
@@ -120,8 +110,8 @@
 &interrupt_if_not_single_group Jobs=@include me/interrupt_if_no_group=%0,%1; @include me/interrupt_if_ambiguous_group=%0,%1
 &interrupt_if_no_group Jobs=@break strmatch(u(db,retrieve_group,%0,%1),None)={@include me/message=%0,no_matching_group_name,%1}
 &interrupt_if_ambiguous_group Jobs=@break strmatch(u(db,retrieve_group,%0,%1),List%r*)={@include me/message=%0,ambiguous_group_name,%1}
-&interrupt_if_cannot_create Jobs=@assert elements(u(db,retrieve_group,%0,%1),3,|)={@include me/message=%0,cannot_create,elements(u(db,retrieve_group,%0,%1),2,|)}
-&interrupt_if_cannot_modify Jobs=@assert elements(u(db,retrieve_group,%0,%1),5,|)={@include me/message=%0,cannot_modify,elements(u(db,retrieve_group,%0,%1),2,|)}
+&interrupt_if_cannot_create Jobs=@assert elements(u(db,retrieve_group,%0,%1),4,|)={@include me/message=%0,cannot_create,elements(u(db,retrieve_group,%0,%1),2,|)}
+&interrupt_if_cannot_modify Jobs=@assert elements(u(db,retrieve_group,%0,%1),6,|)={@include me/message=%0,cannot_modify,elements(u(db,retrieve_group,%0,%1),2,|)}
 
 @@ @@@@@@@@
 @@ Section: Database API
@@ -141,14 +131,13 @@
 @@  1. 'None' if no group or no jobs found
 @@  2. either 'List' or 'Details' followed by %r and:
 @@   2a. if 'List', a list of matching job data
-@@       list format is: DATA|CAPTION
+@@       list format is: DATA(groupname as 2nd element)|CAPTION
 @@   2b. if 'Details' the details for that single job ref.
 @@       detail format is: GROUPNAME%rCAPTION%rDATA%rBODY
-
 &db_retrieve_job Jobs=u(db__retrieve_job_step_2,%0,switch(%1,*/*,after(%1,/),%1),rest(u(db_retrieve_group,%0,switch(%1,*/*,before(%1,/),,)),%r))
 
 @@ As %0, list all jobs matching %1 of visible group-data %2
-&db__retrieve_job_step_2 Jobs=switch(%2,,None, u(db__retrieve_job_step_3, u(db__filter_by_job_caption,u(db__get_job_caption_attrs_from_group_datas,%2),%1))) 
+&db__retrieve_job_step_2 Jobs=switch(%2,,None, u(db__retrieve_job_step_3, %0, u(db__filter_by_job_caption,u(db__get_job_caption_attrs_from_group_datas,%2),%1))) 
 
 &db__get_job_caption_attrs_from_group_datas Jobs=edit(regrep(me,jobs`*_DATA,u(db__jobs_regexp,%0)),_DATA,_CAPTION,%b,%r)
 &db__jobs_regexp Jobs=^\([edit(map(db__first_element_mapper,%0,%r),%r,|)]\)\\|
@@ -156,19 +145,18 @@
 @@ %0 - job`<id>_CAPTION %r-list. %1-JobName
 &db__filter_by_job_caption Jobs=elements(%0,u(db__exact_first_or_matching_inner,iter(%0,first(v(##),|),%r,%r),%1),%r,%r)
 
-&db__retrieve_job_step_3 Jobs=switch(words(%0,%r),>1,List%r[u(db__mix_job_data,%0)],0,None,1,Details%r[u(db__detail_data,%0)]
-&db__mix_job_data Jobs=mix(db__mix_job_data_mixer,edit(%0,_CAPTION,_DATA),%0,%r)
-@@ TODO: Add <GROUPNAME>|
-&db__mix_job_data_mixer Jobs=[v(%0)]|[v(%1)]
-&db__detail_data Jobs=[first(v(groups_[first(v(edit(%0,_CAPTION,_DATA)),|)]),|)]%r[v(%0)]%r[v(edit(%0,_CAPTION,_DATA))]
+&db__retrieve_job_step_3 Jobs=switch(words(%1,%r),>1,List%r[u(db__mix_job_data,%0,%1)],0,None,1,Details%r[u(db__detail_data,%0,%1)]
+&db__mix_job_data Jobs=mix(db__mix_job_data_mixer,regeditall(%1,.+,%0),edit(%1,_CAPTION,_DATA),%1,%r)
+&db__mix_job_data_mixer Jobs=[insert(v(%1),2,u(db__get_groupname_for_jobattr,%0,%1),|)]|[v(%2)]
+&db__detail_data Jobs=[u(db__get_groupname_for_jobattr,%0,%1)]%r[v(%1)]%r[v(edit(%1,_CAPTION,_DATA))]
 
+&db__get_groupname_for_jobattr Jobs=first(u(memoize,db__u_group,%0,first(v(regedit(%1,_\[^_\]+$,_DATA)),|)),|)
 
 @@ As %0, get all visible group data for group names matching %1
 @@ Returns 'None' for zero-length list, or
 @@ 'Details' followed by %r followed by data for the only matching group, or
 @@ 'List' followed by %r followed by a list of data for all matching groups
-@@  Data is in format: ID|Name|Create|See|Modify|Description
-
+@@  Data is in format: ID|GroupName|Name|Create|See|Modify|Description
 &db_retrieve_group Jobs=u(db__retrieve_group_step_2,u(db__exact_first_or_matching,u(db__get_group_data_for_ids,%0,u(db__visible_group_ids_for,%0)),%1))
 
 &db__retrieve_group_step_2 Jobs=switch(words(%0,%r),>1,List%r%0,1,Details%r%0,None)
@@ -176,6 +164,7 @@
 &db__visible_group_ids_for Jobs=letq(inputname,%0,filter(db__visible_group_ids_for_filter,edit(lattr(me/groups_*),%b,%r,GROUPS_,),%r,%r))
 &db__visible_group_ids_for_filter Jobs=elements(u(memoize,db__u_group,%q<inputname>,%0),3,|)
 &db__get_group_data_for_ids Jobs=iter(%1,##|[u(memoize,db__u_group,%0,##)],%r,%r)
+
 
 @@ Minor stuff
 &db__exact_first_or_matching Jobs=elements(%0,u(db__exact_first_or_matching_inner,map(db__second_element_mapper,%0,%r),%1),%r,%r)
@@ -227,12 +216,18 @@ KILT List%rADMIN|Admin Board|1|1|1|Admin Only.%rBUILDING_BOARD|Building Board|1|
 @@ Jobs API
 KILT JOBS`2_CAPTION%rJOBS`AA_CAPTION%rJOBS`KK_CAPTION=u(jobs/db__get_job_caption_attrs_from_group_datas,ADMIN%RCOOL_KIDS_CLUB)
 KILT None=u(jobs/db_retrieve_job,%#,BogusText)
-KILT List%rADMIN|#5:123|Fake Date Data|ROFL proposal%rADMIN|#5:123|Fake Date Data|Theme change proposal=u(jobs/db_retrieve_job,%#,admin/Proposal)
+KILT List%rADMIN|Admin Board|#5:123|Fake Date Data|ROFL proposal%rADMIN|Admin Board|#5:123|Fake Date Data|Theme change proposal=u(jobs/db_retrieve_job,%#,admin/Proposal)
 KILT JOBS`AA_CAPTION=u(jobs/db__filter_by_job_caption,JOBS`AA_CAPTION%rJOBS`KK_CAPTION,ROFL)
 
 KILT Details%rAdmin Board%rTheme change proposal%rADMIN|#5:123|Fake Date Data=u(jobs/db_retrieve_job,%#,admin/Theme)
 
 KILT CHECK
+
+@@ Integration tests
++jobs/add Admin/Fruit1=Strawberry.
++jobs/add Admin/Fruit2=Starfruit.
++jobs/add Admin/Spacetime=Change spacetime to be non-linear.
+
 @wipe Jobs/groups_*
 @wipe Jobs/jobs`*
 @wipe Jobs/kilt
