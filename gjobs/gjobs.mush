@@ -81,7 +81,7 @@
 &message_en_cannot_create Jobs=You may not add jobs to group "%1"
 &message_en_cannot_modify Jobs=You may not modify jobs in group "%1".
 
-&display_group_list Jobs=[ljust(Group Name,20)]Description%r[ljust(-,20,-)][ljust(-,20,-)]%r[iter(rest(%0,%r),ljust(elements(%i0,2,|),20)[elements(%i0,5,|)],%r,%r)]%r
+&display_group_list Jobs=[ljust(Group Name,20)]Description%r[ljust(-,20,-)][ljust(-,20,-)]%r[iter(rest(%0,%r),ljust(elements(%i0,2,|),20)[elements(%i0,6,|)],%r,%r)]%r
 
 &display_multijob_list Jobs=Group Name/Job Name%r[repeat(-,20)]%r[u(display_multijob_list_[first(%0,%r)],%0)]
 &display_multijob_list_list Jobs=iter(rest(%0,%r),elements(%i0,2,|)/[elements(%i0,5,|)],%r,%r)
