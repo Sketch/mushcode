@@ -66,6 +66,7 @@
 
 @create Jobs
 @set Jobs=!NO_COMMAND
+@describe Jobs=A task-tracking system, probably.
 
 @@ can_nspemit removes NoSpoof info, but isn't necessary.
 @power Jobs=can_nspemit
