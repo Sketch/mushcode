@@ -230,11 +230,6 @@ KILT Details%rAdmin Board%rTheme change proposal%rADMIN|#5:123|Fake Date Data%rR
 
 KILT CHECK
 
-@@ Integration tests
-+jobs/add Admin/Fruit1=Strawberry.
-+jobs/add Admin/Fruit2=Starfruit.
-+jobs/add Admin/Spacetime=Change spacetime to be non-linear.
-
 @wipe Jobs/groups_*
 @wipe Jobs/jobs`*
 @wipe Jobs/kilt
