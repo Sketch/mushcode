@@ -15,13 +15,9 @@
 @set KILT=!no_command
 @set KILT=Wizard
 
-@command/add/eqsplit/noparse/rsnoparse KILT
-@command/restrict KILT=FLAG^WIZARD
-@startup KILT=@hook/override/inline KILT=KILT,KILT
+@startup KILT=@command/add/eqsplit/noparse/rsnoparse KILT; @command/restrict KILT=FLAG^WIZARD; @hook/override/inline KILT=KILT,KILT
 &KILT KILT=$^KILT(/[a-zA-Z]*)?\s+(.*?)(?\:=(?<!\\=)(.*))?$:@include me/cmd_%+_[switch(%+,3,%2,4,basic)]=%2,%3,%1,%0
 @set KILT/kilt=regexp
-
-@restart KILT
 
 &cmd_4_basic KILT=@include me/inc_before=%1; @include me/inc_main=%0,%1; @include me/inc_after
 &cmd_3_start KILT=&data_test me=0; &data_failure me=0; &data_success me=0
@@ -49,6 +45,7 @@
 &get_stubs_recurse KILT=ifelse(regmatch(%0,v(get_stubs_regexp),1:1),%q1%1[u(get_stubs_recurse,after(%0,%q1),%1)],@@())
 &get_stubs_regexp KILT=\[@@\(&(.*?)\)\]
 
+@restart KILT
 
 @@ *** Test section ***
 KILT START
