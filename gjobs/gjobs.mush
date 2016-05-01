@@ -31,6 +31,8 @@
 
 @@ Hacking:
 @@
+@@ Search-replace literal string "^\+jobs?" to rename commands.
+@@
 @@ Jobs and Groups are coded as their own layer, to allow changing to SQL.
 @@ Whenever making database calls, always u(db,retrieve_job,%#,Job name)
 @@ &db_ functions are called by &db, and define the database API.
@@ -42,12 +44,15 @@
 @@ Groups data cannot contain newlines
 @@ Group name cannot contain newlines, nor |, nor /
 
+@@ Todo: Rename "BODY" to "TEXT"
+@@ Todo: Actually code memoization
 @@ Todo: Disallow duplicate-named jobs during /add
+@@ Todo: Change display API to be: u(display,xx) for hooks, and pass %# through.
 @@ Todo: Add /take, /reject, and /complete
 @@ Todo: Change commands to (.+) instead and enforce valid job names and group names with nice error message
 @@ Todo: Improve the syntax error messages on /add
 @@ Todo: Warn when %# used in group attribute. (with &disable_warning_group Jobs=1)
-@@ Todo?: Works on small screens
+@@ Todo: Small-screen mode
 @@ Todo: /archive <JobRef> to move to &archive` tree
 @@ Todo: Make data and command objects separable
 @@ Todo: Report errors if command doesn't match (use scan())
@@ -94,6 +99,8 @@
 &cmd_add3 Jobs=$^\+jobs?/(?\:add|new) ([^=/]+)[/=]([^=/]+)[/=](.+)$: @include me/interrupt_if_not_single_group=%#,%1; @include me/interrupt_if_cannot_create=%#,%1; @include me/do_add=%#,%1,%2,%3
 
 &cmd_default0 Jobs=$^\+jobs?$: @include me/cmd_list0
+&cmd_default1 Jobs=$^\+jobs? ([^=/]+)$: @include me/cmd_read2=%0,%1
+&cmd_default2 Jobs=$^\+jobs? ([^=/]+)[/=]([^=/]+)$: @include me/cmd_read2=%0,%1,%2
 
 &cmd_take2 Jobs=$^\+jobs/take ([^/]+)/(.+)$: @include me/interrupt_if_not_single_group=%#,%1; @include me/interrupt_if_cannot_modify=%#,%1; @include me/do_take=%#,%1/%2
 &cmd_reject2 Jobs=$^\+jobs/reject ([^/]+)/(.+)$: @include me/interrupt_if_not_single_group=%#,%1; @include me/interrupt_if_cannot_modify=%#,%1; @include me/do_reject=%#,%1/%2
