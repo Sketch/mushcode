@@ -123,7 +123,7 @@
 &db__new_job_id Jobs=baseconv(inc(div(nattr(me/jobs`*),3)),10,36)
 
 @@ Make a new job in the DB. %0-Poster, %1-GroupID, %2-Caption, %3-Body
-&db_affect_add Jobs=think New Job ID: [setr(newjobid,u(db__new_job_id))]; &jobs`%q<newjobid>_data me=%1|[objid(%0)]|[secs()]; &jobs`%q<newjobid>_caption me=%2; &jobs`%q<newjobid>_body me=%3 
+&db_affect_add Jobs=think New Job ID: [setr(newjobid,u(db__new_job_id))]; &jobs`%q<newjobid>_data me=%1|[objid(%0)]|[secs()]; &jobs`%q<newjobid>_caption me=%2; &jobs`%q<newjobid>_body me=%3
 
 
 @@ As %0, get all visible job data matching jobref %1
@@ -137,7 +137,7 @@
 &db_retrieve_job Jobs=u(db__retrieve_job_step_2,%0,switch(%1,*/*,after(%1,/),%1),rest(u(db_retrieve_group,%0,switch(%1,*/*,before(%1,/),,)),%r))
 
 @@ As %0, list all jobs matching %1 of visible group-data %2
-&db__retrieve_job_step_2 Jobs=switch(%2,,None, u(db__retrieve_job_step_3, %0, u(db__filter_by_job_caption,u(db__get_job_caption_attrs_from_group_datas,%2),%1))) 
+&db__retrieve_job_step_2 Jobs=switch(%2,,None, u(db__retrieve_job_step_3, %0, u(db__filter_by_job_caption,u(db__get_job_caption_attrs_from_group_datas,%2),%1)))
 
 &db__get_job_caption_attrs_from_group_datas Jobs=edit(regrep(me,jobs`*_DATA,u(db__jobs_regexp,%0)),_DATA,_CAPTION,%b,%r)
 &db__jobs_regexp Jobs=^\([edit(map(db__first_element_mapper,%0,%r),%r,|)]\)\\|
