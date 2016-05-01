@@ -6,6 +6,8 @@ MUSHCode is a Lisp-like language to control objects in a virtual MUSH environmen
 
 * function\_manager: Easily manage what @functions load when the server starts.
 
+* gjobs: An easy-to-hack +jobs system for tracking tasks and requests.
+
 * guest\_identity: Change the names of guests when they connect, based on custom mappings. Examples are given to bind guest names to IP addresses, produce pseudo-random names, and rotate through a fixed list (like on M\*U\*S\*H).
 
 * kilt: A unit-testing and mocking system for PennMUSH Softcode.
