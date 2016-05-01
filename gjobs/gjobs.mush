@@ -23,8 +23,8 @@
 @@ [---] List groups:           /list
 @@ [---] List matching groups:  /list <group>
 @@ [---] List matching jobs:    /list <JobRef>
-@@ [CS-] Add job to group:      /add <group>=<caption>/<body>
-@@ [CS-] Add job to group:      /add <group>/<caption>=<body>
+@@ [CS-] Add job to group:      /add <group>=<caption>/<text>
+@@ [CS-] Add job to group:      /add <group>/<caption>=<text>
 @@ [-SM] Begin working:         /take <JobRef>
 @@ [-SM] Decline job:           /reject <JobRef>
 @@ [-SM] Mark job as complete:  /complete <JobRef>
@@ -39,12 +39,14 @@
 @@ &db__ functions are private, only called by functions in &db_
 @@ &db_* are functions that query the database
 @@ &db_set_* are @includes that modify the database
+@@
+@@ The names "caption", "data", and "body" were chosen so that
+@@ executing "examine" on the data object returns a sorted display.
 
 @@ Captions cannot contain newlines nor |
 @@ Groups data cannot contain newlines
 @@ Group name cannot contain newlines, nor |, nor /
 
-@@ Todo: Rename "BODY" to "TEXT"
 @@ Todo: Actually code memoization
 @@ Todo: Disallow duplicate-named jobs during /add
 @@ Todo: Change display API to be: u(display,xx) for hooks, and pass %# through.
@@ -68,7 +70,7 @@
 @@ can_nspemit removes NoSpoof info, but isn't necessary.
 @power Jobs=can_nspemit
 
-&jobs Jobs=@@ Format: &jobs`<id>_<caption|data|body> ; @@ &jobs`<id>_data =group_id|poster|ctime|owner|...
+&jobs Jobs=@@ Format: &jobs`<id>_<caption|data|text> ; @@ &jobs`<id>_data =group_id|poster|ctime|owner|...
 &groups Jobs=@@ Format: &groups_<id>=Name|add_jobs_lock|see_jobs_lock|modify_jobs_lock|Description
 
 @@ Message: %0=target, %1=name of message, %2--%9 additional arguments
@@ -129,8 +131,8 @@
 
 &db__new_job_id Jobs=baseconv(inc(div(nattr(me/jobs`*),3)),10,36)
 
-@@ Make a new job in the DB. %0-Poster, %1-GroupID, %2-Caption, %3-Body
-&db_affect_add Jobs=think New Job ID: [setr(newjobid,u(db__new_job_id))]; &jobs`%q<newjobid>_data me=%1|[objid(%0)]|[secs()]; &jobs`%q<newjobid>_caption me=%2; &jobs`%q<newjobid>_body me=%3
+@@ Make a new job in the DB. %0-Poster, %1-GroupID, %2-Caption, %3-Text
+&db_affect_add Jobs=think New Job ID: [setr(newjobid,u(db__new_job_id))]; &jobs`%q<newjobid>_data me=%1|[objid(%0)]|[secs()]; &jobs`%q<newjobid>_caption me=%2; &jobs`%q<newjobid>_text me=%3
 
 
 @@ As %0, get all visible job data matching jobref %1
@@ -140,7 +142,7 @@
 @@   2a. if 'List', a list of matching job data
 @@       list format is: DATA(groupname as 2nd element)|CAPTION
 @@   2b. if 'Details' the details for that single job ref.
-@@       detail format is: GROUPNAME%rCAPTION%rDATA%rBODY
+@@       detail format is: GROUPNAME%rCAPTION%rDATA%rTEXT
 &db_retrieve_job Jobs=u(db__retrieve_job_step_2,%0,switch(%1,*/*,after(%1,/),%1),rest(u(db_retrieve_group,%0,switch(%1,*/*,before(%1,/),,)),%r))
 
 @@ As %0, list all jobs matching %1 of visible group-data %2
@@ -155,7 +157,7 @@
 &db__retrieve_job_step_3 Jobs=switch(words(%1,%r),>1,List%r[u(db__mix_job_data,%0,%1)],0,None,1,Details%r[u(db__detail_data,%0,%1)]
 &db__mix_job_data Jobs=mix(db__mix_job_data_mixer,regeditall(%1,.+,%0),edit(%1,_CAPTION,_DATA),%1,%r)
 &db__mix_job_data_mixer Jobs=[insert(v(%1),2,u(db__get_groupname_for_jobattr,%0,%1),|)]|[v(%2)]
-&db__detail_data Jobs=[u(db__get_groupname_for_jobattr,%0,%1)]%r[v(%1)]%r[v(edit(%1,_CAPTION,_DATA))]%r[v(edit(%1,_CAPTION,_BODY))]
+&db__detail_data Jobs=[u(db__get_groupname_for_jobattr,%0,%1)]%r[v(%1)]%r[v(edit(%1,_CAPTION,_DATA))]%r[v(edit(%1,_CAPTION,_TEXT))]
 
 &db__get_groupname_for_jobattr Jobs=first(u(memoize,db__u_group,%0,first(v(regedit(%1,_\[^_\]+$,_DATA)),|)),|)
 
@@ -193,25 +195,25 @@
 @@ TESTING
 @@ Assumption: You are a wizard
 @@ Reminder Groups Add/See/Mod
-@@ &jobs Jobs=@@ Format: &jobs`<id>_<caption|data|body> ; @@ &jobs`<id>_data =group_id|owner|ctime|...
+@@ &jobs Jobs=@@ Format: &jobs`<id>_<caption|data|text> ; @@ &jobs`<id>_data =group_id|owner|ctime|...
 &groups_Cool_Kids_Club Jobs=Cool Kids Club|0|0|0|Nobody is cool enough.
 &groups_Building_Board Jobs=Building Board|1|1|[strmatch(#-1,%0)]|Build requests go here.
 &groups_Admin Jobs=Admin Board|[orflags(%0,Wr)]|[orflags(%0,Wr)]|[orflags(%0,Wr)]|Admin only.
 &jobs`2_caption Jobs=Wait What
 &jobs`2_data Jobs=COOL_KIDS_CLUB|#555:123|Fake Date Data
-&jobs`2_body Jobs=How'd this even get here, dude?
+&jobs`2_text Jobs=How'd this even get here, dude?
 &jobs`q1_caption Jobs=A Golden Castle
 &jobs`q1_data Jobs=BUILDING_BOARD|#24:123|Fake Date Data
-&jobs`q1_body Jobs=Please build Sneaker a golden castle off of Main and Oak street. Thank you!
+&jobs`q1_text Jobs=Please build Sneaker a golden castle off of Main and Oak street. Thank you!
 &jobs`t5_caption Jobs=Yveltal Road
 &jobs`t5_data Jobs=BUILDING_BOARD|#5:123|Fake Date Data
-&jobs`t5_body Jobs=Hey, could somebody finish building Yveltal Road off the Ashen Valley?
+&jobs`t5_text Jobs=Hey, could somebody finish building Yveltal Road off the Ashen Valley?
 &jobs`aa_caption Jobs=ROFL proposal
 &jobs`aa_data Jobs=ADMIN|#5:123|Fake Date Data
-&jobs`aa_body Jobs=Wow guyz check out this awesome link: https://example.com
+&jobs`aa_text Jobs=Wow guyz check out this awesome link: https://example.com
 &jobs`kk_caption Jobs=Theme change proposal
 &jobs`kk_data Jobs=ADMIN|#5:123|Fake Date Data
-&jobs`kk_body Jobs=Remove Spirit-Type. Keep Ghost. What do you think? --A
+&jobs`kk_text Jobs=Remove Spirit-Type. Keep Ghost. What do you think? --A
 
 
 &kilt Jobs=$KILT *:@@ Stub
