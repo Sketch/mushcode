@@ -19,19 +19,19 @@
 @@ %0=TARGET_FUNCTION, %1=TARGET, %2=SEARCHER_DBREF
 @@ Returns something like FOUND 3 2 1 0 on success, on failure: #-1 y x w v u t s...
 @@ If "FOUND" begins the list, the rest represents the q-registers that will be read when backtracking the tree (in WALK_TREE).
-/newcat
-&BUILD_TREE Pathfinder=
-if(u(me/[secure(last(%0,/))],%1,num(%2),,0),FOUND 0[@@(We're already there!)],[@@(Loop...)]
-[fold(#lambda/
-ifelse(\%1,
-switch(first(\%0),FOUND,\%0,
-setq(\%1,letq(z,u(remove_all_invalids,iter(first(r(first(\%0)),|),u(list_adjacent_nodes,\%i0,[num(%2)])),\%0),u(extract_rooms,\%qz)|\%qz))
-\[if(u(me/[secure(last(%0,/))],[decompose(%1)],[num(%2)],\%0,\%1),FOUND \%1,\%1)\] \%0
-)
-,\%0)
-,1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p q r s t u v w x y #-1,0)]
-)
-.
+
+@@ A broken-out version of BUILD_TREE for viewing purposes.
+@@ &BUILD_TREE Pathfinder=
+@@ if(u(me/[secure(last(%0,/))],%1,num(%2),,0),FOUND 0[@@(We're already there!)],[@@(Loop...)]
+@@ [fold(#lambda/
+@@ ifelse(\%1,
+@@ switch(first(\%0),FOUND,\%0,
+@@ setq(\%1,letq(z,u(remove_all_invalids,iter(first(r(first(\%0)),|),u(list_adjacent_nodes,\%i0,[num(%2)])),\%0),u(extract_rooms,\%qz)|\%qz))
+@@ \[if(u(me/[secure(last(%0,/))],[decompose(%1)],[num(%2)],\%0,\%1),FOUND \%1,\%1)\] \%0
+@@ )
+@@ ,\%0)
+@@ ,1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p q r s t u v w x y #-1,0)]
+@@ )
 
 &BUILD_TREE Pathfinder=if(u(me/[secure(last(%0,/))],%1,num(%2),,0),FOUND 0[@@(We're already there!)],[@@(Loop...)][fold(#lambda/ifelse(\%1,switch(first(\%0),FOUND,\%0,setq(\%1,letq(z,u(remove_all_invalids,iter(first(r(first(\%0)),|),u(list_adjacent_nodes,\%i0,[num(%2)])),\%0),u(extract_rooms,\%qz)|\%qz))\[if(u(me/[secure(last(%0,/))],[decompose(%1)],[num(%2)],\%0,\%1),FOUND \%1,\%1)\] \%0),\%0),1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p q r s t u v w x y #-1,0)])
 
