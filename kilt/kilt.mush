@@ -12,6 +12,7 @@
 @@ - Stubbed attributes will be restored regardless of other code failures.
 @@ - The value of stubbed attributes cannot contain &VAR_DELIM (default %t).
 @@ - Presently, the value of mocked attributes cannot contain the string ")]".
+@@ - Presently, the 'expect' portion of "KILT expect=eval" warns on unescaped commas.
 
 
 @create KILT
