@@ -18,6 +18,8 @@ MUSHCode is a Lisp-like language to control objects in a virtual MUSH environmen
 
 * oocc: A simple teleportation command that takes a player on or off a defined IC grid.
 
+* random\_room: A simple command that displays the route to a randomly-chosen publically accessible room on the grid. Uses 'pathfinder'.
+
 * typical\_who: An easily alterable online player listing. Designed for rapidly prototyping +who appearance.
 
 * pathfinder: [library] A functional, breadth-first pathfinder. Can be used in code such as teleportation and map systems, for giving directions.

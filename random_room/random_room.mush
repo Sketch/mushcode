@@ -1,0 +1,42 @@
+@@ Title: Random Room Picker
+@@ Author: Sketch @ M*U*S*H
+@@
+@@ Description:
+@@ Displays the route to a randomly-chosen publically accessible room on the grid.
+@@
+@@ Requires:
+@@  - Pathfinder (https://github.com/sketch/mushcode/pathfinder)
+@@  - DBRef alterations
+@@  - Custom code
+@@
+@@ Notes:
+@@ This uses a lot of function invocations because it first makes a graph of
+@@ the entire grid, picks a room, then pathfinds to that room by making a
+@@ graph of the entire grid AGAIN. There is certainly a smarter way to do this.
+
+@create Random Room
+@set Random Room=!no_command
+@power Random Room=can_nspemit
+@describe Random Room=Displays the route to a randomly-chosen room on the grid.
+
+@@ Reference: Pathfinder. You need to set this to the DBRef of the Pathfinder object.
+&REF_PATHFINDER Random Room=
+
+@@ &FUN_STARTING_POINTS should return a list of room dbrefs that player %0 can jump to.
+&FUN_STARTING_POINTS Random Room=
+
+@@ &PRETTY_PATH_START only needs cosmetic changes.
+@@ Args: %0 is the starting-word and %1 is the next DBRef in the list of directions to the destination.
+&PRETTY_PATH_START Random Room=switch(%0,WARP,Jump to [name(%1)] with +jump %1,Start where you are.)
+
+@@ Randomly pick a room by reaching into all the room DBRefs the pathfinder found.
+&FUN_PICK_RANDOM_ROOM Random Room=[null(u(v(REF_pathfinder)/do_unlocalized,iter(u(fun_starting_points,%0),%i0:WARP),TARGET_ROOM,NO_TARGET,%0))][randword(fold(me/fun_pick_random_room_fold,1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p q r s t u v w x y z,first(r(0),|)))]
+&FUN_PICK_RANDOM_ROOM_FOLD Random Room=%0 [first(r(%1),|)]
+
+&CMD_RANDOM Random Room=$+rroom:@nspemit %#=[u(pathfind_messages,%#,u(fun_pick_random_room,%#))]
+
+&PATHFIND_MESSAGES Random Room=Location Selected: [name(%1)]%r[u(pretty_path,u(v(REF_pathfinder)/do,u(fun_starting_points,%0),TARGET_ROOM,%1,%0))]
+
+&PRETTY_PATH Random Room=strcat(u(pretty_path_start,elements(%0,1),setr(0,elements(%0,2))),u(pretty_path_more,rest(rest(%0))))
+
+&PRETTY_PATH_MORE Random Room=iter(%0,%r- [name(u(v(REF_pathfinder)/get_exit_from0to1,%q0,%i0))] to [name(setr(0,%i0))].)
