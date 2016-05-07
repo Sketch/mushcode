@@ -8,37 +8,45 @@
 @create Pathfinder
 @power Pathfinder=see_all
 
+@@ Section: Examples
+@@ &EXAMPLE works on M*U*S*H (mush.pennmush.org:4201).
+&EXAMPLE Pathfinder=u(do_unlocalized,#0:OMPHALOS #1628:LAKESIDE,TARGET_ROOM,#4145,%#) [@@(On M*U*S*H, start at Omphalos Park and the Lakeside Pasture, and find the shortest path to The Golden Ducat, using yourself as the searcher. You must have a @DESC and @SEX set due to the lock on The Golden Ducat's entrance. Returns: OMPHALOS #0 #2232 #2633 #4145)]
+
+@@ &DO is part of the core code, included here to clarify &EXAMPLE.
+&DO Pathfinder=[@@(Call this with %0=ORIGIN_LIST, %1=TARGET_FUNCTION, %2=TARGET, %3=SEARCHER_DBREF)][localize(switch(%+,3,u(do_unlocalized,%0,%1,%2,%#),4,u(do_unlocalized,%0,%1,%2,%3),#-1 NEED 3 OR 4 ARGUMENTS))]
+
+@@ &DO_UNLOCALIZED is the same as &DO, but exposes the registers that the internal code sets.
+&DO_UNLOCALIZED Pathfinder=u(pathfind_init,%0,%1,%2,%3)
+
+@@ &EXAMPLE_PRINTOUT prints out the layers of DBRefs that &EXAMPLE produces.
+&EXAMPLE_PRINTOUT Pathfinder=u(me/example)%r[iter(0 1 2 3 4,LEVEL %i0: [first(r(%i0),|)]%rLEVEL %i0 PAIRS: [rest(r(%i0),|)],%b,%r)]%rFunction invocations: [first(%?)]
+
+@@ Section: Helper Functions
+
+@@ GET_EXIT_FROM0TO1: This takes two locations as arguments and returns the exit that links %0 to %1. This is a function to help ease coding an output formatter.
+&GET_EXIT_FROM0TO1 Pathfinder=filter(#lambda/strmatch(loc(\%0),[num(%1)]),lexits(%0))
+
+@@ Same as GET_EXIT_FROM0TO1, but respects locks. Pass the searcher as %2. The code uses #0 as the searcher if none is given.
+&GET_VALID_EXIT_FROM0TO1 Pathfinder=filter(#lambda/strmatch(loc(\%0),[num(%1)]),filter(#lambda/elock(\%0,[switch(%+,3,num(%2),#0)]),lexits(%0)))
+
+@@ The comment is in the code
+&EXAMPLE_IS_PUBLIC_ROOM Pathfinder=switch(%0,#0,1,switch(setr(0,u(DO,num(%0):THERE,TARGET_ROOM,#0)),THERE *,eq(words(filterbool(#lambda/\%0,step(get_valid_exit_from0to1,rest(revwords(rest(iter(rest(%q0),%i0 %i0)))),2))),sub(words(%q0),2)),0))[@@(Pathfind to a public room (#0), then find if the starting room can be accessed by walking from that room without passing any locks)]
+
+@@ The description is a breakdown of how this pathfinder works.
+@@ The short version is that it's a breadth-first search that starts from a list of rooms, then backtracks upon reaching a target.
 @describe Pathfinder=This code is made to find the shortest path from a list of jump points on a grid to a single destination. This object is to be used as a part of other code, and has no commands of its own. Uses a breadth-first search to find the shortest path from a list of 'Point A's to a 'Point B'. Works in any group of standard rooms with standard exits (no master/zone/dynamic exits). Made by Sketch@M*U*S*H. Bug reports, patches, and suggestions welcome.%r%r'Do' is the function to call. The first argument is a list of origin points (DBRef:WORD pairs), the second is the name of a Target Function (described later) ufun on the Pathfinder, the third is an arbitrary string used for the target function, the fourth (optional) is the dbref of the object seeking a path (uses %%# if none given).%rIf a path is found, the output will start with the 'WORD' portion of the tuple of the origin point that began the path, followed by list of room DBRefs that lead to the destination. The WORD is arbitrary, but must contain no spaces or punctuation.%rTarget Functions are called to determine if the pathfinder has found the target. The Target Function is passed: \%0 - TARGET(User-given string)  \%1 - Searcher's DBRef  \%2 - Q-Register list  \%3 - Current Q-register name. Q-Registers contain a list of ROOMs, then a list of ROOM:PREV_ROOM pairs: "(ROOM_DBRef)s | (ROOM_DBRef:PREV_DBref)s". Calls to the Target Function that  return a DBRef from the Current Q-Register or an integer (of an element in the list) are considered successful, but code carefully: During the tree-building section of the pathfinder, any true value can be returned, while the tree-walking section requires it to return the aforementioned.%r%rThe EXAMPLE attribute is printed here, as an example of how to call DO. For an example of the data structures used in the pathfinder, try running EXAMPLE_PRINTOUT.%r&EXAMPLE:>>%r[v(EXAMPLE)]%r<<%r%rSome helper functions have been defined for convenience:%rGET_EXIT_FROM0TO1 returns the exit leading from room \%0 to room \%1, given as dbrefs.%rGET_VALID_EXIT_FROM0TO1 same as above, but with a third argument that is a searcher with which to check locks.%r%rSpecial note: Although the pathfinder does respect locks on exits, but the exits must be able to see the attributes they need to check. In short, those attributes must be @set VISUAL and not @set NEARBY.
 
+&VERSION Pathfinder=2.0.0
+
+@@ Section: Core code
+
+@@ This uncommented version respects locks on exits.
 &LIST_VALID_ADJACENT_ROOMS Pathfinder=map(#lambda/loc(\%0),filter(#lambda/elock(\%0,[num(%1)]),lexits(%0)))
 &LIST_ADJACENT_ROOMS Pathfinder=map(#lambda/loc(\%0),lexits(%0))
 &LIST_VALID_ADJACENT_NODES Pathfinder=map(#lambda/loc(\%0):[secure(%0)],filter(#lambda/elock(\%0,[num(%1)]),lexits(%0)))
-@@ This commented version ignores locks on rooms.
+@@ This commented version ignores locks on exits.
 @@ &LIST_VALID_ADJACENT_NODES Pathfinder=map(#lambda/loc(\%0):[secure(%0)],lexits(%0))
 @@ &LIST_ADJACENT_NODES Pathfinder=map(#lambda/loc(\%0):[secure(%0)],lexits(%0))
-
-
-@@ ifelse(visible(%#,switch(%3,*/*,%3,me/%3)),
-@@ %0=TARGET_FUNCTION, %1=TARGET, %2=SEARCHER_DBREF
-@@ Returns something like FOUND 3 2 1 0 on success, on failure: #-1 y x w v u t s...
-@@ If "FOUND" begins the list, the rest represents the q-registers that will be read when backtracking the tree (in WALK_TREE).
-
-@@ A broken-out version of BUILD_TREE for viewing purposes.
-@@ &BUILD_TREE Pathfinder=
-@@ if(u(me/[secure(last(%0,/))],%1,num(%2),,0),FOUND 0[@@(We're already there!)],[@@(Loop...)]
-@@ [fold(#lambda/
-@@ ifelse(\%1,
-@@ switch(first(\%0),FOUND,\%0,
-@@ setq(\%1,letq(z,u(remove_all_invalids,iter(first(r(first(\%0)),|),u(list_adjacent_nodes,\%i0,[num(%2)])),\%0),u(extract_rooms,\%qz)|\%qz))
-@@ \[if(u(me/[secure(last(%0,/))],[decompose(%1)],[num(%2)],\%0,\%1),FOUND \%1,\%1)\] \%0
-@@ )
-@@ ,\%0)
-@@ ,1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p q r s t u v w x y #-1,0)]
-@@ )
-
-&BUILD_TREE Pathfinder=if(u(me/[secure(last(%0,/))],%1,num(%2),,0),FOUND 0[@@(We're already there!)],[@@(Loop...)][fold(#lambda/ifelse(\%1,switch(first(\%0),FOUND,\%0,setq(\%1,letq(z,u(remove_all_invalids,iter(first(r(first(\%0)),|),u(list_adjacent_nodes,\%i0,[num(%2)])),\%0),u(extract_rooms,\%qz)|\%qz))\[if(u(me/[secure(last(%0,/))],[decompose(%1)],[num(%2)],\%0,\%1),FOUND \%1,\%1)\] \%0),\%0),1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p q r s t u v w x y #-1,0)])
-
-@@
 
 @@ Remove all rooms from %0 that have already been visited.
 @@ %0 - Room:Parent tuple list.  %1 - Register List
@@ -62,29 +70,29 @@
 @@ &TARGET_ROOM_OWNER Pathfinder=member(iter(first(r(%3),|),owner(%i0)),%0)
 
 
-
-&EXAMPLE Pathfinder=u(do_unlocalized,#0:OMPHALOS #1628:LAKESIDE,TARGET_ROOM,#4145,%#) [@@(On M*U*S*H, start at Omphalos Park and the Lakeside Pasture, and find the shortest path to The Golden Ducat, using yourself as the searcher. You must have a @DESC and @SEX set due to the lock on The Golden Ducat's entrance. Returns: OMPHALOS #0 #2232 #2633 #4145)]
-
-&EXAMPLE_PRINTOUT Pathfinder=u(me/example)%r[iter(0 1 2 3 4,LEVEL %i0: [first(r(%i0),|)]%rLEVEL %i0 PAIRS: [rest(r(%i0),|)],%b,%r)]%rFunction invocations: [first(%?)]
-
-&DO Pathfinder=[@@(Call this with %0=ORIGIN_LIST, %1=TARGET_FUNCTION, %2=TARGET, %3=SEARCHER_DBREF)][localize(switch(%+,3,u(do_unlocalized,%0,%1,%2,%#),4,u(do_unlocalized,%0,%1,%2,%3),#-1 NEED 3 OR 4 ARGUMENTS))]
-
-&DO_UNLOCALIZED Pathfinder=u(pathfind_init,%0,%1,%2,%3)
-
 &PATHFIND_INIT Pathfinder=setq(0,u(extract_rooms,%0)|%0)[u(pathfind,%1,%2,%3)]
 
 @@ %0=TARGET_FUNCTION, %1=TARGET, %2=SEARCHER_DBREF
 &PATHFIND Pathfinder=switch(u(build_tree,%0,%1,%2),#-1 *,#$,FOUND *,u(walk_tree,#$,%0,%1,%2),#-1 NO PATH FOUND)
 
-&VERSION Pathfinder=2.0.0
+@@ The BUILD_TREE function does the breadth-first search,
+@@ branching out from the initially-given list.
+@@ Args: %0=TARGET_FUNCTION, %1=TARGET, %2=SEARCHER_DBREF
+@@ Returns:
+@@  On success: FOUND <register list>, such as FOUND 3 2 1 0
+@@  On failure: #-1 <register list>, #-1 y x w v u t s ... 0
+@@ If "FOUND" begins the list, the rest represents the q-registers that will be read when backtracking the tree (in WALK_TREE).
+&BUILD_TREE Pathfinder=if(u(me/[secure(last(%0,/))],%1,num(%2),,0),FOUND 0[@@(We're already there!)],[@@(Loop...)][fold(#lambda/ifelse(\%1,switch(first(\%0),FOUND,\%0,setq(\%1,letq(z,u(remove_all_invalids,iter(first(r(first(\%0)),|),u(list_adjacent_nodes,\%i0,[num(%2)])),\%0),u(extract_rooms,\%qz)|\%qz))\[if(u(me/[secure(last(%0,/))],[decompose(%1)],[num(%2)],\%0,\%1),FOUND \%1,\%1)\] \%0),\%0),1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p q r s t u v w x y #-1,0)])
 
-@@ HELPER FUNCTIONS
-
-@@ GET_EXIT_FROM0TO1: This takes two locations as arguments and returns the exit that links %0 to %1. This is a function to help ease coding an output formatter.
-&GET_EXIT_FROM0TO1 Pathfinder=filter(#lambda/strmatch(loc(\%0),[num(%1)]),lexits(%0))
-
-@@ Same as GET_EXIT_FROM0TO1, but respects locks. Pass the searcher as %2. The code uses #0 as the searcher if none is given.
-&GET_VALID_EXIT_FROM0TO1 Pathfinder=filter(#lambda/strmatch(loc(\%0),[num(%1)]),filter(#lambda/elock(\%0,[switch(%+,3,num(%2),#0)]),lexits(%0)))
-
-@@ The comment is in the code
-&EXAMPLE_IS_PUBLIC_ROOM Pathfinder=switch(%0,#0,1,switch(setr(0,u(DO,num(%0):THERE,TARGET_ROOM,#0)),THERE *,eq(words(filterbool(#lambda/\%0,step(get_valid_exit_from0to1,rest(revwords(rest(iter(rest(%q0),%i0 %i0)))),2))),sub(words(%q0),2)),0))[@@(Pathfind to a public room (#0), then find if the starting room can be accessed by walking from that room without passing any locks)]
+@@ A broken-out version of BUILD_TREE for viewing purposes.
+@@ &BUILD_TREE Pathfinder=
+@@ if(u(me/[secure(last(%0,/))],%1,num(%2),,0),FOUND 0[@@(We're already there!)],[@@(Loop...)]
+@@ [fold(#lambda/
+@@ ifelse(\%1,
+@@ switch(first(\%0),FOUND,\%0,
+@@ setq(\%1,letq(z,u(remove_all_invalids,iter(first(r(first(\%0)),|),u(list_adjacent_nodes,\%i0,[num(%2)])),\%0),u(extract_rooms,\%qz)|\%qz))
+@@ \[if(u(me/[secure(last(%0,/))],[decompose(%1)],[num(%2)],\%0,\%1),FOUND \%1,\%1)\] \%0
+@@ )
+@@ ,\%0)
+@@ ,1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p q r s t u v w x y #-1,0)]
+@@ )
