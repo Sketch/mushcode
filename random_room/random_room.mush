@@ -22,15 +22,15 @@
 @@ Reference: Pathfinder. You need to set this to the DBRef of the Pathfinder object.
 &REF_PATHFINDER Random Room=
 
-@@ &FUN_STARTING_POINTS should return a list of room dbrefs that player %0 can jump to.
-&FUN_STARTING_POINTS Random Room=
+@@ &FUN_STARTING_POINTS should return a list of DBRef:TAG pairs that a player %0 can jump to.
+&FUN_STARTING_POINTS Random Room=iter(#400 #531 #655,%i0:WARP)[@@(This is only an example)]
 
 @@ &PRETTY_PATH_START only needs cosmetic changes.
-@@ Args: %0 is the starting-word and %1 is the next DBRef in the list of directions to the destination.
+@@ Args: %0 is the TAG and %1 is DBRef of the first step in the directions.
 &PRETTY_PATH_START Random Room=switch(%0,WARP,Jump to [name(%1)] with +jump %1,Start where you are.)
 
 @@ Randomly pick a room by reaching into all the room DBRefs the pathfinder found.
-&FUN_PICK_RANDOM_ROOM Random Room=[null(u(v(REF_pathfinder)/do_unlocalized,iter(u(fun_starting_points,%0),%i0:WARP),TARGET_ROOM,NO_TARGET,%0))][randword(fold(me/fun_pick_random_room_fold,1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p q r s t u v w x y z,first(r(0),|)))]
+&FUN_PICK_RANDOM_ROOM Random Room=[null(u(v(REF_pathfinder)/do_unlocalized,u(fun_starting_points,%0),TARGET_ROOM,NO_TARGET,%0))][randword(fold(me/fun_pick_random_room_fold,1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p q r s t u v w x y z,first(r(0),|)))]
 &FUN_PICK_RANDOM_ROOM_FOLD Random Room=%0 [first(r(%1),|)]
 
 &CMD_RANDOM Random Room=$+rroom:@nspemit %#=[u(pathfind_messages,%#,u(fun_pick_random_room,%#))]
