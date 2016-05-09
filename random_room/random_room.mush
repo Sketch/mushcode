@@ -34,6 +34,7 @@
 &FUN_PICK_RANDOM_ROOM_FOLD Random Room=%0 [first(r(%1),|)]
 
 &CMD_RANDOM Random Room=$+rroom:@nspemit %#=[u(pathfind_messages,%#,u(fun_pick_random_room,%#))]
+&CMD_RANDOM_LOUD Random Room=$+rroom/loud:@nsremit %L=[u(pathfind_messages,%#,u(fun_pick_random_room,%#))]
 
 &PATHFIND_MESSAGES Random Room=%rLocation Selected: [name(%1)]%r[u(pretty_path,u(v(REF_pathfinder)/do,u(fun_starting_points,%0),TARGET_ROOM,%1,%0))]
 
