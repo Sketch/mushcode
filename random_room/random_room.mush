@@ -35,7 +35,7 @@
 
 &CMD_RANDOM Random Room=$+rroom:@nspemit %#=[u(pathfind_messages,%#,u(fun_pick_random_room,%#))]
 
-&PATHFIND_MESSAGES Random Room=Location Selected: [name(%1)]%r[u(pretty_path,u(v(REF_pathfinder)/do,u(fun_starting_points,%0),TARGET_ROOM,%1,%0))]
+&PATHFIND_MESSAGES Random Room=%rLocation Selected: [name(%1)]%r[u(pretty_path,u(v(REF_pathfinder)/do,u(fun_starting_points,%0),TARGET_ROOM,%1,%0))]
 
 &PRETTY_PATH Random Room=strcat(u(pretty_path_start,elements(%0,1),setr(0,elements(%0,2))),u(pretty_path_more,rest(rest(%0))))
 
