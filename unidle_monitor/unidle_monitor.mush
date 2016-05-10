@@ -1,0 +1,30 @@
+@@ Title: Unidle Monitor
+@@ Author: Sketch @ M*U*S*H
+@@
+@@ Description: Notify other code when a player returns from being idle.
+@@ Requires: A cron to trigger this object's &cron_hourly.
+@@
+@@ Usage:
+@@ - Check the notes in &take_action.
+@@ - Alter the &idle_* attributes to adjust what the code considers "idle".
+@@ - Be sure to make your system cron @trigger &cron_hourly, or
+@@   make this code re-@trigger its own. Time drift doesn't matter much.
+
+@create UnidleMonitor
+@power UnidleMonitor=see_all
+
+&take_action UnidleMonitor=@@ Arg: %0 - DBRef of player that just idled. Use @include me/idlelist_remove_one=%0 to remove them from the notifications list or &take_action will be triggered with their DBRef again in 5 minutes.
+
+@adisconnect UnidleMonitor=@include me/idlelist_remove_one=%#
+@startup UnidleMonitor=@drain/all/me
+&cron_hourly UnidleMonitor=@dolist lnum(0,3300,%b,300)={@wait %i0=@trigger me/every5minutes}
+&every5minutes UnidleMonitor=@include me/notify_all_unidled;@include me/idlelist_add_all_idle
+&notify_all_unidled UnidleMonitor=@dolist filter(idle_lessthan_checkpoint,map(dbref_for_attr,lattr(me/list_*)))={@include me/take_action=%i0}
+&dbref_for_attr UnidleMonitor=after(%0,_)
+
+&idlelist_add_all_idle UnidleMonitor=@dolist filter(idle_morethan_checkpoint,lwho())={&list_%i0 me=TRUE}
+&idlelist_remove_one UnidleMonitor=@wipe me/list_%0
+
+@@ 18000 seconds is 5 hours. Adjust as desired.
+&idle_lessthan_checkpoint UnidleMonitor=lt(idle(%0),18000)
+&idle_morethan_checkpoint UnidleMonitor=gt(idle(%0),18000)

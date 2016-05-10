@@ -28,6 +28,8 @@ MUSHCode is a Lisp-like language to control objects in a virtual MUSH environmen
 
 * posemeter: Award EXP or points for roleplaying based on number of alternating poses, content length, etc.
 
+* unidle\_monitor: Notify and/or trigger other code when a player returns from being idle (aka 'unidles').
+
 * where: A simple +where that sorts by unique location. The appearance is easily altered.
 
 
