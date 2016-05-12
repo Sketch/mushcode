@@ -1,0 +1,55 @@
+@create InfoRadiator
+@power InfoRadiator = can_spoof see_all
+@set InfoRadiator=!no_command
+
+@ACONNECT InfoRadiator=@wait 1={@include me/cmd_list}
+
+&DESCRIBE InfoRadiator=Radiator Messages: %r[u(list)]%r%rTo submit your own radiator message, use "[ansi(h,+rad <message>)]".%rFor more information, "+help rad"
+@set radiator/DESCRIBE=no_command visual prefixmatch public nearby
+
+&CMD_CLEAR InfoRadiator=$+rad/clear:@assert hasattr(me,s`%#)=@nspemit %#=You don't have a radiation set! ; @nspemit %#=Message cleared. ; @wipe me/s`%# ; @wipe me/t`%#
+&CMD_CLEAR_VIC InfoRadiator=$+rad/clear *:@assert orflags(%#,Wr)=@nspemit %#=I don't think you can do that. ; @break strmatch(%0,all)={@nspemit %#=+rad/clear all has been disabled. Please use +rad/new.} ; @assert setr(0,namegrab(edit(lattr(me/s`*),S`,),%0))={@nspemit %#=Clear whose message?}; @nspemit %#=You clear [name(%q0)]'s message, "[v(s`%q0)]" ; @wipe me/s`%q0 ; @wipe me/t`%q0
+&CMD_RAD InfoRadiator=$+rad:@nspemit/silent %#=%r[u(describe)]%r[if(hasattr(me,s`%#),Your current radiation message is:%r"[v(s`%#)]",You have no radiation message set.)]
+@@ "
+&CMD_LIST InfoRadiator=$^\+rad/(show|list)$:@nspemit %#=[u(list,%0,%1)]
+@set radiator/CMD_LIST=regexp
+&CMD_SET InfoRadiator=$+rad *:@assert lte(strlen(%0),78)={@nspemit %#=That's too long by [sub(strlen(%0),78)] characters.}; @break pos(%r,%0)={@nspemit %#=No \%rs allowed, sorry!}; &s`%# me=%0 ; @nspemit %#=Radiation message '%0' has been entered into the queue. ; &t`%# me=[secs()] ; think iter(grepi(me,v`*,s`%#:),wipe(me/%i0))
+
+&MON_UNIDLE InfoRadiator=^UNIDLE *:@assert words(u(list,%0,list),%r); @nspemit %0=Welcome back! Here's what's happening (according to +rad):%r[u(list,%0,list)]
+@set InfoRadiator=MONITOR
+&CRON_DAILY InfoRadiator=@dolist filter(expired,lattr(me/s`*))={&%i0 me;&[u(t_for_s,%i0)] me}
+&EXPIRED InfoRadiator=gt(sub(secs(),u(time_for_s,%0)),stringsecs(30d))
+
+&LIST InfoRadiator=[map(ifelse(cand(orflags(%#,Wr),strmatch(%1,show)),fun_list_admin,fun_list_mortal),revwords(sortkey(time_for_s,lattr(me/s`*),n)),%b,%r)]
+&FUN_LIST_ADMIN InfoRadiator=align(1 >14 >4 <[sub(width(%#),24)],if(strmatch(%0,%va),*),left(name(after(%0,`)),12):,([words(grep(me,v`*,%0:))]),v(%0))
+&FUN_LIST_ADMIN InfoRadiator=[ljust(left(name(after(%0,`)),12),12)]: [u(fun_list_mortal,%0)]
+&FUN_LIST_MORTAL InfoRadiator=[u(blast_for_s,%0)] [v(%0)]
+&BLAST_FOR_S InfoRadiator=switch(before(grab(timestring(u(time_diff_for_s,%0),1),*d),d),>24,.,>16,-,>8,+,*)
+&TIME_DIFF_FOR_S InfoRadiator=sub(secs(),u(time_for_s,%0))
+&T_FOR_S InfoRadiator=T`[after(%0,S`)]
+&TIME_FOR_S InfoRadiator=v(u(t_for_s,%0))
+
+KILT *=[@@(&time_diff_for_s InfoRadiator=[stringsecs(7d)])][u(#6352/blast_for_s)]
+KILT +=[@@(&time_diff_for_s InfoRadiator=[stringsecs(9d)])][u(#6352/blast_for_s)]
+KILT -=[@@(&time_diff_for_s InfoRadiator=[stringsecs(17d)])][u(#6352/blast_for_s)]
+KILT .=[@@(&time_diff_for_s InfoRadiator=[stringsecs(25d)])][u(#6352/blast_for_s)]
+
+&FUN_SCORERS InfoRadiator=[v(theme)]%r%r[map(fun_list_scores,filterbool(#lambda/grep(me,v`*,\%0:),lattr(me/s`*)),%b,%r)]
+&GETMSG InfoRadiator=set(me,va:[extract(setr(0,lattr(me/s`*)) %q0,inc(match(%q0,%va)),1)])[v(%va)]
+
+&S InfoRadiator=Save messages
+&T InfoRadiator=Timestamps for database save messages.
+@set radiator/S=no_command mortal_dark
+@set radiator/T=mortal_dark
+
+@@ Helpfile
++rad is a little information radiator. Each player character can set a message in +rad that is no longer than 78 letters long. Typically, +rad messages are teasers for plots or events on the MUSH, and link to a +bbpost with more information. The full list of radiator messages is shown to a player character whenever they connect, unidle, or type +rad. Messages are sorted with the newest at the top, and are marked with a symbol depending on how old they are. Messages newer than 8 days are marked with a *, newer than 16 with a +, newer than 24 with a -, and newer than 30 with a full stop. Messages are deleted after 30 days.
+%r
+%r[ljust(ansi(h,+rad),14)] - Show all messages, your message, and usage.
+%r[ljust(ansi(h,+rad/clear),14)] - Clear your message.
+%r[ljust(ansi(h,+rad <message>),14)] - Set your message.
+%r[ljust(ansi(h,+rad/list),14)] - List all messages.
+%r
+%rAdmin-only:
+%r[ljust(ansi(h,+rad/clear <Character>),22)] - Clear <Character>'s +rad message.
+%r[ljust(ansi(h,+rad/show),22)] - Show who owns each message.
