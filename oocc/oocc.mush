@@ -1,7 +1,7 @@
 @@ A simple on-grid off-grid teleporter
 @@ Author: Sketch@M*U*S*H
 @@ Server flavors: PennMUSH-only
-@@ Optionally uses: https://github.com/Sketch/mushcode/tree/master/playstatus 
+@@ Optionally uses: https://github.com/Sketch/mushcode/tree/master/playstatus
 @@ Set &DATA_OOC_ROOMS to something that evaluates to all your OOC room DBRef #s,
 @@ Set &DATA_OOC_LOUNGE to something that evaluates to the OOC Lounge DBRef #.
 
@@ -13,9 +13,11 @@
 &DATA_OOC_ROOMS OOCC=#321 #5865 #3540 #4247 #4096 #332 [lsearch(all,type,room,lflags,OOC)]
 &DATA_OOC_LOUNGE OOCC=#321
 
-&FUN`FORMAT_MESSAGE OOCC=%0
-&FUN`ERR`NO_ICLOC OOCC=You haven't used this command on the IC grid yet.
-&FUN`ERR`ROOM_DESTROYED OOCC=The room you were at has been destroyed.%b%bSorry!
+&OOCC OOCC=$oocc: @assert t(member([u(data_OOC_Room)] [u(data_OOC_lounge)],%L))={&ICLOC %#=objid(%L);+PS %#=OOC;@teleport %#=u(data_OOC_Lounge)}; @assert hasattrval(%#,icloc)={@include me/message=%#,no_icloc}; @assert isdbref(get(%#/icloc))={@include me/message=%#,room_destroyed}; @teleport %#=get(%#/icloc);@wipe %#/icloc
 
-&OOCC OOCC=$oocc:@select/inline t(member([u(data_OOC_Room)] [u(data_OOC_lounge)],%L))=0,{&ICLOC %#=objid(%L);+PS %#=OOC;@teleport %#=u(data_OOC_Lounge)} ,1,{@assert hasattrval(%#,icloc)={@nspemit %#=letq(0,Fun`Err`No_ICLoc,u(Fun`Format_Message,u(%q0),%q0,%#))};@assert isdbref(get(%#/icloc))={@nspemit %#=letq(0,Fun`Err`Room_Destroyed,u(Fun`Format_Message,u(%q0),%q0,%#))};@teleport %#=get(%#/icloc);@wipe %#/ICLoc}
+@@ Message: %0=target, %1=name of message, %2--%9 additional arguments
+&message OOCC=@nspemit %0=[u(me/message_[default(%0/lang,en)]_prefix)][udefault(me/message_[default(%0/lang,en)]_%1,Message missing. Please contact a translator.,%0,%2,%3,%4,%5,%6,%7,%8,%9)]
+&message_en_prefix OOCC=
+&message_en_no_icloc OOCC=You haven't used this command on the IC grid yet.
+&message_en_room_destroyed OOCC=The room you were at has been destroyed.%b%bSorry!
 
