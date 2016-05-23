@@ -84,12 +84,25 @@
 &message_en_cannot_create Jobs=You may not add jobs to group "%1"
 &message_en_cannot_modify Jobs=You may not modify jobs in group "%1".
 
+@@ Called for +jobs/list and +jobs/list *.
+@@ %0 is "List" or "Details" followed by a %r-separated list of group details.
+@@ Data is in format: ID|GroupName|Name|Create|See|Modify|Description
 &display_group_list Jobs=[ljust(Group Name,20)]Description%r[ljust(-,20,-)][ljust(-,20,-)]%r[iter(rest(%0,%r),ljust(elements(%i0,2,|),20)[elements(%i0,6,|)],%r,%r)]%r
 
+@@ Called for +jobs/list */*, or if +jobs/read */* finds multiple results.
+@@ %0 is:
+@@  either 'List' or 'Details' followed by %r and:
+@@   if 'List', a list of matching job data
+@@     list format is: &DATA(groupname inserted as 2nd element)|&CAPTION
+@@   if 'Details' the details for that single job ref.
+@@       detail format is: &GROUPNAME%r&CAPTION%r&DATA%r&TEXT
 &display_multijob_list Jobs=Group Name/Job Name%r[repeat(-,20)]%r[u(display_multijob_list_[first(%0,%r)],%0)]
 &display_multijob_list_list Jobs=iter(rest(%0,%r),elements(%i0,2,|)/[elements(%i0,5,|)],%r,%r)
 &display_multijob_list_details Jobs=first(rest(%0,%r),%r)/[elements(rest(%0,%r),2,%r)]
 
+@@ Called if +jobs/read */* finds only one result.
+@@ %0 is "Details", then %r, then the details for that single job ref.
+@@  detail format is: &GROUPNAME%r&CAPTION%r&DATA%r&TEXT
 &display_details Jobs=---Job---%rGroup/Title: [elements(%0,2 3,%r,/)]%rPosted by: [name(elements(elements(%0,4,%r),2,|))]%rPosted at: [convsecs(elements(elements(%0,4,%r),3,|))]%rDescription: [extract(%0,5,999,%r)]%r---End---
 
 
