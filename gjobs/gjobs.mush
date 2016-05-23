@@ -31,7 +31,11 @@
 
 @@ Hacking:
 @@
-@@ Search-replace literal string "^\+jobs?" to rename commands.
+@@ To rename commands, search-replace the source or @edit them after
+@@ initial upload. Example: To use +requests instead of +jobs:
+@@ @edit Jobs/cmd_*={\+jobs?},{\+requests?}
+@@ &message_en_prefix Jobs=REQUESTS:%b
+@@
 @@
 @@ Jobs and Groups are coded as their own layer, to allow changing to SQL.
 @@ Whenever making database calls, always u(db,retrieve_job,%#,Job name)
