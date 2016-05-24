@@ -1,11 +1,46 @@
+@@ Title: Info Radiator
+@@ Author: Sketch @ M*U*S*H
+@@
+@@ Requires: Unidle_Monitor, cron_daily
+@@
+@@ Description: A board for short posts that frequently notifies players.
+@@
+@@ BBoards are good for wordy posts.
+@@ Try using +rad for attention-grabbing short adverts for ongoing plots,
+@@ rumors, announcements, and more!
+@@
+@@ By default:
+@@  - Messages are limited to 78 letters long
+@@  - All messages are displayed when a player connects or unidles.
+@@  - Messages are listed with the most recent at the top.
+@@  - Messages are automatically removed in 30 days.
+@@
+@@ Read the helpfile below for more.
+
+@@ Section: Helpfile (remove the @@ and newlines)
+@@ &helpfile InfoRadiator=+rad is a little information radiator. Each player character can set a message in +rad that is no longer than 78 letters long. Typically, +rad messages are teasers for plots or events on the MUSH, and link to a +bbpost with more information. The full list of radiator messages is shown to a player character whenever they connect, unidle, or type +rad. Messages are sorted with the newest at the top, and are marked with a symbol depending on how old they are. Messages newer than 8 days are marked with a *, newer than 16 with a +, newer than 24 with a -, and newer than 30 with a full stop. Messages are deleted after 30 days.
+@@ %r
+@@ %r[ljust(ansi(h,+rad),14)] - Show all messages, your message, and usage.
+@@ %r[ljust(ansi(h,+rad/clear),14)] - Clear your message.
+@@ %r[ljust(ansi(h,+rad <message>),14)] - Set your message.
+@@ %r[ljust(ansi(h,+rad/list),14)] - List all messages.
+@@ %r
+@@ %rAdmin-only:
+@@ %r[ljust(ansi(h,+rad/clear <Character>),22)] - Clear <Character>'s +rad message.
+@@ %r[ljust(ansi(h,+rad/show),22)] - Show who owns each message.
+
+
+@@ TODO: &REF_
+
+@@ Section: Code
 @create InfoRadiator
+@@ can_spoof is optional
 @power InfoRadiator = can_spoof see_all
 @set InfoRadiator=!no_command
 
 @ACONNECT InfoRadiator=@wait 1={@include me/cmd_list}
 
 &DESCRIBE InfoRadiator=Radiator Messages: %r[u(list)]%r%rTo submit your own radiator message, use "[ansi(h,+rad <message>)]".%rFor more information, "+help rad"
-@set radiator/DESCRIBE=no_command visual prefixmatch public nearby
 
 &CMD_CLEAR InfoRadiator=$+rad/clear:@assert hasattr(me,s`%#)=@nspemit %#=You don't have a radiation set! ; @nspemit %#=Message cleared. ; @wipe me/s`%# ; @wipe me/t`%#
 &CMD_CLEAR_VIC InfoRadiator=$+rad/clear *:@assert orflags(%#,Wr)=@nspemit %#=I don't think you can do that. ; @break strmatch(%0,all)={@nspemit %#=+rad/clear all has been disabled. Please use +rad/new.} ; @assert setr(0,namegrab(edit(lattr(me/s`*),S`,),%0))={@nspemit %#=Clear whose message?}; @nspemit %#=You clear [name(%q0)]'s message, "[v(s`%q0)]" ; @wipe me/s`%q0 ; @wipe me/t`%q0
@@ -29,27 +64,22 @@
 &T_FOR_S InfoRadiator=T`[after(%0,S`)]
 &TIME_FOR_S InfoRadiator=v(u(t_for_s,%0))
 
-KILT *=[@@(&time_diff_for_s InfoRadiator=[stringsecs(7d)])][u(#6352/blast_for_s)]
-KILT +=[@@(&time_diff_for_s InfoRadiator=[stringsecs(9d)])][u(#6352/blast_for_s)]
-KILT -=[@@(&time_diff_for_s InfoRadiator=[stringsecs(17d)])][u(#6352/blast_for_s)]
-KILT .=[@@(&time_diff_for_s InfoRadiator=[stringsecs(25d)])][u(#6352/blast_for_s)]
-
 &FUN_SCORERS InfoRadiator=[v(theme)]%r%r[map(fun_list_scores,filterbool(#lambda/grep(me,v`*,\%0:),lattr(me/s`*)),%b,%r)]
 &GETMSG InfoRadiator=set(me,va:[extract(setr(0,lattr(me/s`*)) %q0,inc(match(%q0,%va)),1)])[v(%va)]
 
 &S InfoRadiator=Save messages
 &T InfoRadiator=Timestamps for database save messages.
+
 @set radiator/S=no_command mortal_dark
 @set radiator/T=mortal_dark
 
-@@ Helpfile
-+rad is a little information radiator. Each player character can set a message in +rad that is no longer than 78 letters long. Typically, +rad messages are teasers for plots or events on the MUSH, and link to a +bbpost with more information. The full list of radiator messages is shown to a player character whenever they connect, unidle, or type +rad. Messages are sorted with the newest at the top, and are marked with a symbol depending on how old they are. Messages newer than 8 days are marked with a *, newer than 16 with a +, newer than 24 with a -, and newer than 30 with a full stop. Messages are deleted after 30 days.
-%r
-%r[ljust(ansi(h,+rad),14)] - Show all messages, your message, and usage.
-%r[ljust(ansi(h,+rad/clear),14)] - Clear your message.
-%r[ljust(ansi(h,+rad <message>),14)] - Set your message.
-%r[ljust(ansi(h,+rad/list),14)] - List all messages.
-%r
-%rAdmin-only:
-%r[ljust(ansi(h,+rad/clear <Character>),22)] - Clear <Character>'s +rad message.
-%r[ljust(ansi(h,+rad/show),22)] - Show who owns each message.
+@@ Section: Testing
+&kilt Jobs=$KILT *:@@ Stub
+KILT START
+
+KILT *=[@@(&time_diff_for_s InfoRadiator=[stringsecs(7d)])][u(#6352/blast_for_s)]
+KILT +=[@@(&time_diff_for_s InfoRadiator=[stringsecs(9d)])][u(#6352/blast_for_s)]
+KILT -=[@@(&time_diff_for_s InfoRadiator=[stringsecs(17d)])][u(#6352/blast_for_s)]
+KILT .=[@@(&time_diff_for_s InfoRadiator=[stringsecs(25d)])][u(#6352/blast_for_s)]
+
+KILT CHECK
