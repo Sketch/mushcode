@@ -44,7 +44,7 @@
 
 &CMD_CLEAR InfoRadiator=$+rad/clear:@assert hasattr(me,s`%#)=@nspemit %#=You don't have a radiation set! ; @nspemit %#=Message cleared. ; @wipe me/s`%# ; @wipe me/t`%#
 &CMD_CLEAR_VIC InfoRadiator=$+rad/clear *:@assert orflags(%#,Wr)=@nspemit %#=I don't think you can do that. ; @break strmatch(%0,all)={@nspemit %#=+rad/clear all has been disabled. Please use +rad/new.} ; @assert setr(0,namegrab(edit(lattr(me/s`*),S`,),%0))={@nspemit %#=Clear whose message?}; @nspemit %#=You clear [name(%q0)]'s message, "[v(s`%q0)]" ; @wipe me/s`%q0 ; @wipe me/t`%q0
-&CMD_RAD InfoRadiator=$+rad:@nspemit/silent %#=%r[u(describe)]%r[if(hasattr(me,s`%#),Your current radiation message is:%r"[v(s`%#)]",You have no radiation message set.)]
+&CMD_DEFAULT InfoRadiator=$+rad:@nspemit/silent %#=%r[u(describe)]%r[if(hasattr(me,s`%#),Your current radiation message is:%r"[v(s`%#)]",You have no radiation message set.)]
 @@ "
 &CMD_LIST InfoRadiator=$^\+rad/(show|list)$:@nspemit %#=[u(list,%0,%1)]
 @set radiator/CMD_LIST=regexp
