@@ -83,7 +83,7 @@
 
 &message_en_prefix Jobs=JOBS:%b
 &message_en_no_matching_group_name Jobs=There is no group named "%1".
-&message_en_ambiguous_group_name Jobs=Please type more of "%1" to clarify which group you meant: %2
+&message_en_ambiguous_group_name Jobs=Please type more of "%1" to clarify which group you meant: [itemize(iter(%2,elements(%i0,2,|),%r,|),|)]
 &message_en_job_added Jobs=Added job "%2" to group "%1".
 &message_en_cannot_create Jobs=You may not add jobs to group "%1"
 &message_en_cannot_modify Jobs=You may not modify jobs in group "%1".
@@ -136,7 +136,7 @@
 &interrupt_to_read_if_single Jobs=@break strmatch(u(db,retrieve_job,%0,%1),Details*)={@include me/do_display_details=%0,%1}
 &interrupt_if_not_single_group Jobs=@include me/interrupt_if_no_group=%0,%1; @include me/interrupt_if_ambiguous_group=%0,%1
 &interrupt_if_no_group Jobs=@break strmatch(u(db,retrieve_group,%0,%1),None)={@include me/message=%0,no_matching_group_name,%1}
-&interrupt_if_ambiguous_group Jobs=@break strmatch(u(db,retrieve_group,%0,%1),List%r*)={@include me/message=%0,ambiguous_group_name,%1}
+&interrupt_if_ambiguous_group Jobs=@break strmatch(u(db,retrieve_group,%0,%1),List%r*)={@include me/message=%0,ambiguous_group_name,%1,rest(u(db,retrieve_group,%0,%1),%r)}
 &interrupt_if_cannot_create Jobs=@assert elements(u(db,retrieve_group,%0,%1),4,|)={@include me/message=%0,cannot_create,elements(u(db,retrieve_group,%0,%1),2,|)}
 &interrupt_if_cannot_modify Jobs=@assert elements(u(db,retrieve_group,%0,%1),6,|)={@include me/message=%0,cannot_modify,elements(u(db,retrieve_group,%0,%1),2,|)}
 
