@@ -5,7 +5,7 @@
 @@ KILT CHECK - Report count of tests, successes, and failures
 @@ KILT expect = softcode - Check that 'expect' matches the output of softcode
 @@ Use [@@(&attr testobject=value)] to temporarily replace an attribute value.
-@@ Example that succeeds: KILT [@@(&one Narf=1)]1=[u(Narf/one)]
+@@ Example that succeeds: KILT 1=[@@(&one Narf=1)][u(Narf/one)]
 @@
 @@ Important notes:
 @@ - Make sure your code has matching brackets and parentheses!
