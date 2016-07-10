@@ -52,6 +52,7 @@
 @restart KILT
 
 @@ *** Test section ***
+&KILT me=$KILT *:@@ Stub
 KILT START
 
 @@ Basics
@@ -76,3 +77,4 @@ KILT left\(STR\,1\)=[get(KILT/temp_test)]
 KILT hi kilt\=hello|beep kilt\=bop|glee kilt\=zot!=[u(KILT/get_stubs,lit([@@(&hi kilt=hello)][@@(&beep kilt=bop)][@@(&glee kilt=zot!)]),|)]
 
 KILT CHECK
+&KILT me
