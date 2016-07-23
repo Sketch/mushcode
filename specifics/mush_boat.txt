@@ -1,78 +1,78 @@
+@@ Title: DSpace boat
+@@ Author: Sketch @ M*U*S*H
+@@ Description:
+@@  A boat for M*U*S*H's DSpace ocean.
+@@  This boat is a decent example of:
+@@  - How to automate creation of and link a group of objects
+@@  - How to make a composite space with many connected objects
+@@  - How to make an object's interior be rooms
+@@  - How to have fun while alone on an ocean
 
-      #5001
-      |
-#5020-#5042
-      |
-      #5198
-(#10203)
+@@ Basic setup - Creation
+@create OuterObject
+@create Boat ZMO
+@set me=zb_boat_outerobject:[num(OuterObject)]
+@set me=zb_boat_zmo:[num(Boat ZMO)]
 
-Enter helm:
-Shows current location. (desc and all!)
-Shows controls.
-Shows current course.
-Moving? No --> Offer to set new course
-Yes --> Offer to stop course
+drop OuterObject
+@name [v(zb_boat_outerobject)]=Boat
 
+@dig/teleport Deck
+@set me=zb_boat_deck:%l
+@dig/teleport Engine=Engine,Deck;D
+@set me=zb_boat_engine:%l
+drop Boat ZMO
+Deck
+@dig/teleport Bridge=Bridge;b,Deck;D
+@set me=zb_boat_bridge:%l
 
-Cardinal directions:
-If plotting course:
-N/E/S/W add to current course and do not display
-If not plotting course:
-Move vessel directly
+@@ Basic setup - Interior / Parenting
+@teleport [v(zb_boat_deck)]
+@failure Engine=It's locked and made of duralinium.
+@lock Engine==Me
+@chzone [v(zb_boat_deck)]=[v(zb_boat_zmo)]
+@chzone [v(zb_boat_bridge)]=[v(zb_boat_zmo)]
+@chzone [v(zb_boat_engine)]=[v(zb_boat_zmo)]
+@parent [v(zb_boat_deck)]=[v(zb_boat_zmo)]
+@parent [v(zb_boat_bridge)]=[v(zb_boat_zmo)]
+@parent [v(zb_boat_engine)]=[v(zb_boat_zmo)]
+@parent [v(zb_boat_outerobject)]=[v(zb_boat_zmo)]
 
-Add 
-
-Course-setting:
-Directional controls:
-123
-4 6
-789
-
-Move
-
-
-Commands:
-N NE E SE S SW W NW
-1 2 3 4 6 7 8 9 (5 in a direction)
-# ALPHA variant (99 North)
-ALPHA # (Southeast 99)
-
-PLOT - Enters plotting mode
-START - Starts plot
-STOP - Stops plot
-SAVE * - Saves current plot as NAME (no overwrite)
-WINDOWS OPEN/CLOSE - Unfilter incoming messages
 
 @@ Basic setup - Exterior
-@@ @lock/control #10203=$#9862
-@describe #10203=A grand boat with a shimmering force field enclosing the deck in a giant rainbow bubble.
-@nameformat #10203=
-@idescribe #10203=
-@ealias #10203=Starduster;star;dust
-@lock/command #10203==#10203
+@@ @lock/control [v(zb_boat_outerobject)]=$me
+@nameformat [v(zb_boat_outerobject)]=
+@descformat [v(zb_boat_outerobject)]=%0
+@idescribe [v(zb_boat_outerobject)]=
+@lock/command [v(zb_boat_outerobject)]==[v(zb_boat_outerobject)]
+@describe [v(zb_boat_outerobject)]=You can "enter boat".
 
-@@ Basic setup - Interior
-@failure #5022=It's locked and made of duralinium.
-
+@@ Zone-Parent Setup
+@lock/zone [v(zb_boat_zmo)]==[v(zb_boat_zmo)]
+@set [v(zb_boat_zmo)]=this_boat_deck:[v(zb_boat_deck)]
+@set [v(zb_boat_zmo)]=this_boat_bridge:[v(zb_boat_bridge)]
+@set [v(zb_boat_zmo)]=this_boat_engine:[v(zb_boat_engine)]
+@set [v(zb_boat_zmo)]=this_boat_outerobject:[v(zb_boat_outerobject)]
 
 @@ Sound propogation
-@listen #10203=*
-@ahear #10203=dolook
-&Looking_semaphore #10203=0
-&dolook #10203=$dolook:@break v(looking_semaphore); &looking_semaphore me=1; &cache me; @ahear me=&cache me=v(cache)\%r\%0; look ; @ahear me=dolook; @wait 0={&looking_semaphore me=0}
+@listen [v(zb_boat_outerobject)]=*
+@ahear [v(zb_boat_outerobject)]=@include me/dolook
+&Looking_semaphore [v(zb_boat_outerobject)]=0
+&dolook [v(zb_boat_outerobject)]=@break v(looking_semaphore); &looking_semaphore me=1; &cache me; @ahear me=&cache me=v(cache)\%r\%0; look ; @ahear me=@include me/dolook; @wait 0={&looking_semaphore me=0}
 
+@@ Enter/Exiting controls
+@exitformat [v(zb_boat_deck)]=Obvious Exits:%r[itemize(iter(%0, name(%i0)) Out)]
+@aenter [v(zb_boat_outerobject)]=@switch/inline t(member(v(leaving_list),%#))=0,@teleport %#=[v(this_boat_deck)],1,{drop %#;&leaving_list me=[setdiff(v(leaving_list),%#)]}
+
+&cmd_out [v(zb_boat_deck)]=$^o(?\:ut(?\:side)?)?$:&leaving_list [v(this_boat_outerobject)]=[setunion(get([v(this_boat_outerobject)]/leaving_list),%#)];@teleport/inside %#=[v(this_boat_outerobject)];@wait 1={&leaving_list [v(this_boat_outerobject)]=[setdiff(get([v(this_boat_outerobject)]/leaving_list),%#)]};@@ This last @wait is so HEAVY doesn't break the code.
+@set [v(zb_boat_deck)]=!no_command
+@set [v(zb_boat_deck)]/cmd_out=Regexp
 
 
 @@ ZMO/Parent
-@descformat #5020=[ansi(hb,Outside:[get(#10203/cache)])]%rInside:%r%0
+@descformat [v(zb_boat_zmo)]=[ansi(hb,Outside:[get([v(this_boat_outerobject)]/cache)])]%rInside:%r%0
+&ZONE_MAP [v(zb_boat_zmo)]=u([v(zb_boat_bridge)]/wrap_map,u([v(zb_boat_bridge)]/you_are_here))
 
-
-@@ Enter/Exiting controls
-@aenter #10203=@switch/inline t(member(v(leaving_list),%#))=0,@teleport %#=#5042,1,{drop %#;&leaving_list me=[setdiff(v(leaving_list),%#)]}
-&cmd_out #5042=$^o(?\:ut(?\:side)?)?$:&leaving_list #10203=[setunion(get(#10203/leaving_list),%#)];@teleport/inside %#=#10203;@wait 1={&leaving_list #10203=[setdiff(get(#10203/leaving_list),%#)]};@@ This last @wait is so HEAVY doesn't break the code.
-@set #5042/cmd_out=Regexp
-@set #5042=!no_command
-@exitformat #5042=Obvious Exits:%r[itemize(iter(%0, name(%i0)) Out)]
 
 
 @@ Movement control
@@ -142,9 +142,66 @@ WINDOWS OPEN/CLOSE - Unfilter incoming messages
 &msg_start #10203=@zemit/silent #5020=The vessel begins moving.
 
 
+@@ **** My stuff ****
+&evalex me=$evalex: &zb_boat_outerobject=#10203; &zb_boat_deck=#5042; &zb_boat_engine=#5020; &zb_boat_zmo me=#12687
+
+@@ Old ZMR: #5020
+
+@@ Interior decorating
+@name [v(zb_boat_outerobject)]=Evalex
+@ealias [v(zb_boat_outerobject)]=Evalex;Alexandrite
+@describe [v(zb_boat_outerobject)]=An weekender yacht with a shimmering force field that encloses the deck in a giant whisping sapphire bubble. The words "Evening Alexandrite" are painted large serif letters on the side. While docked, a long shiny ramp allows access to the interior. You can "enter evalex".
+@@ TODO: @describe [v(zb_boat_deck)]=Tiled floors and wooden benches...
+
+
 PLOTTED_PATH [#9862$]: E4 SE10 E14 E7 E4 NE3 NE1 N5
 
 
 
 @@ Help
 &cmd_help
+
+      #5001
+      |
+#5020-#5042
+      |
+      #5198
+(#10203)
+
+Enter helm:
+Shows current location. (desc and all!)
+Shows controls.
+Shows current course.
+Moving? No --> Offer to set new course
+Yes --> Offer to stop course
+
+
+Cardinal directions:
+If plotting course:
+N/E/S/W add to current course and do not display
+If not plotting course:
+Move vessel directly
+
+Add 
+
+Course-setting:
+Directional controls:
+123
+4 6
+789
+
+Move
+
+
+Commands:
+N NE E SE S SW W NW
+1 2 3 4 6 7 8 9 (5 in a direction)
+# ALPHA variant (99 North)
+ALPHA # (Southeast 99)
+
+PLOT - Enters plotting mode
+START - Starts plot
+STOP - Stops plot
+SAVE * - Saves current plot as NAME (no overwrite)
+WINDOWS OPEN/CLOSE - Unfilter incoming messages
+
