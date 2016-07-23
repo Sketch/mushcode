@@ -61,12 +61,19 @@ Deck
 &dolook [v(zb_boat_outerobject)]=@break v(looking_semaphore); &looking_semaphore me=1; &cache me; @ahear me=&cache me=v(cache)\%r\%0; look ; @ahear me=@include me/dolook; @wait 0={&looking_semaphore me=0}
 
 @@ Enter/Exiting controls
-@exitformat [v(zb_boat_deck)]=Obvious Exits:%r[itemize(iter(%0, name(%i0)) Out)]
-@aenter [v(zb_boat_outerobject)]=@switch/inline t(member(v(leaving_list),%#))=0,@teleport %#=[v(this_boat_deck)],1,{drop %#;&leaving_list me=[setdiff(v(leaving_list),%#)]}
+@teleport [v(zb_boat_deck)]
+@open Out=%L
+@lock Out=#FALSE
+@parent Out=[v(zb_boat_zmo)]
+@failure Out=
+@ofailure Out=
+@afailure Out=@include [v(this_boat_deck)]/actually_leave
+@lfail Here=
+@olfail Here=
+@alfail Here=@include me/actually_leave
+&actually_leave Here=@wait [v(this_boat_outerobject)]/leaving_%#/1={@@ This semaphore is only used as an ephemeral attribute.}; @teleport/inside %#=[v(this_boat_outerobject)]
 
-&cmd_out [v(zb_boat_deck)]=$^o(?\:ut(?\:side)?)?$:&leaving_list [v(this_boat_outerobject)]=[setunion(get([v(this_boat_outerobject)]/leaving_list),%#)];@teleport/inside %#=[v(this_boat_outerobject)];@wait 1={&leaving_list [v(this_boat_outerobject)]=[setdiff(get([v(this_boat_outerobject)]/leaving_list),%#)]};@@ This last @wait is so HEAVY doesn't break the code.
-@set [v(zb_boat_deck)]=!no_command
-@set [v(zb_boat_deck)]/cmd_out=Regexp
+@aenter [v(zb_boat_outerobject)]=@switch/inline hasattr(me,leaving_%#)=0,{@teleport %#=[v(this_boat_deck)]},1,{drop %#;@drain me/leaving_%#}
 
 
 @@ ZMO/Parent
