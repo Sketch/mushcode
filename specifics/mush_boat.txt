@@ -1,0 +1,150 @@
+
+      #5001
+      |
+#5020-#5042
+      |
+      #5198
+(#10203)
+
+Enter helm:
+Shows current location. (desc and all!)
+Shows controls.
+Shows current course.
+Moving? No --> Offer to set new course
+Yes --> Offer to stop course
+
+
+Cardinal directions:
+If plotting course:
+N/E/S/W add to current course and do not display
+If not plotting course:
+Move vessel directly
+
+Add 
+
+Course-setting:
+Directional controls:
+123
+4 6
+789
+
+Move
+
+
+Commands:
+N NE E SE S SW W NW
+1 2 3 4 6 7 8 9 (5 in a direction)
+# ALPHA variant (99 North)
+ALPHA # (Southeast 99)
+
+PLOT - Enters plotting mode
+START - Starts plot
+STOP - Stops plot
+SAVE * - Saves current plot as NAME (no overwrite)
+WINDOWS OPEN/CLOSE - Unfilter incoming messages
+
+@@ Basic setup - Exterior
+@@ @lock/control #10203=$#9862
+@describe #10203=A grand boat with a shimmering force field enclosing the deck in a giant rainbow bubble.
+@nameformat #10203=
+@idescribe #10203=
+@ealias #10203=Starduster;star;dust
+@lock/command #10203==#10203
+
+@@ Basic setup - Interior
+@failure #5022=It's locked and made of duralinium.
+
+
+@@ Sound propogation
+@listen #10203=*
+@ahear #10203=dolook
+&Looking_semaphore #10203=0
+&dolook #10203=$dolook:@break v(looking_semaphore); &looking_semaphore me=1; &cache me; @ahear me=&cache me=v(cache)\%r\%0; look ; @ahear me=dolook; @wait 0={&looking_semaphore me=0}
+
+
+
+@@ ZMO/Parent
+@descformat #5020=[ansi(hb,Outside:[get(#10203/cache)])]%rInside:%r%0
+
+
+@@ Enter/Exiting controls
+@aenter #10203=@switch/inline t(member(v(leaving_list),%#))=0,@teleport %#=#5042,1,{drop %#;&leaving_list me=[setdiff(v(leaving_list),%#)]}
+&cmd_out #5042=$^o(?\:ut(?\:side)?)?$:&leaving_list #10203=[setunion(get(#10203/leaving_list),%#)];@teleport/inside %#=#10203;@wait 1={&leaving_list #10203=[setdiff(get(#10203/leaving_list),%#)]};@@ This last @wait is so HEAVY doesn't break the code.
+@set #5042/cmd_out=Regexp
+@set #5042=!no_command
+@exitformat #5042=Obvious Exits:%r[itemize(iter(%0, name(%i0)) Out)]
+
+
+@@ Movement control
+&cmd_movement #5001=$^[NEWS0-9]+[NEWS0-9\s]*$:@break v(state_plotting);@include me/inc_plot_check=%0;@trigger #10203/control_start=u(fun_quantify_plot_singletons,ucstr(%0));@pemit %#=Path entered.
+@set #5001/cmd_movement=regexp
+
+&inc_plot_check #5001=@assert u(fun_valid_plot,u(fun_quantify_plot_singletons,ucstr(%0)))={@pemit %#=Invalid plot (for some reason).}
+&fun_quantify_plot_singletons #5001=regeditall(%0,\[A-Z\]+\\b,$01)
+&fun_valid_plot #5001=eq(words(%0),words(filter(#lambda/regmatch(\%0,v(fun_valid_plot_regexp)),%0)))
+&fun_valid_plot_regexp #5001=(N[EW]?|S[EW]?|E|W)[1-9][0-9]*
+
+@@ Movement Plotter
+&cmd_plot_start #5001=$^PLOT(?\: START)?$:@emit Plotting mode [if(v(state_plotting),\(Already\)%b)]activated.;&state_plotting me=1
+@set #5001/cmd_plot_start=regexp
+&cmd_plot_stop #5001=$PLOT STOP:@include me/inc_plot_stop
+&inc_plot_stop #5001=@emit Plotting mode [if(not(v(state_plotting)),\(Already\)%b)]dectivated.;&state_plotting me=0
+
+&cmd_plot_reset #5001=$PLOT RESET:@pemit %#=Plot reset.;&plotted_path me
+&cmd_plot_undo #5001=$UNDO:&plotted_path me=revwords(rest(revwords(v(plotted_path))));@pemit %#=Most recent segement redacted.
+&cmd_plot #5001=$^[NEWS0-9]+[NEWS0-9\s]*$:@assert v(state_plotting);@include me/inc_plot_check=%0;@include me/inc_add_stack=%0;@pemit %#=Plot extended.;@include me/inc_plot_display
+@set #5001/cmd_plot=regexp
+
+&inc_add_stack #5001=&plotted_path me=squish(insert(v(plotted_path),-1,u(fun_quantify_plot_singletons,ucstr(%0))))
+&cmd_del #5001=&del_stack #5001=&plotted_path me=
+
+@set #5001/cmd_plot_start=regexp
+
+&cmd_start #5001=$START:@trigger #10203/control_start=v(plotted_path);@include me/inc_plot_stop
+&cmd_stop #5001=$STOP:@trigger #10203/control_stop
+
+
+@@ Plot display
+
+&cmd_plot_display #5001=$display:@include me/inc_plot_display
+&inc_plot_display #5001=@pemit %#=fold(fun_plot_display_fold,strallof(0 0,map(fun_direction_to_vector,u(fun_plot_expand,v(plotted_path)),%b,|),|),[get(loc(#10203)/xcoor)] [get(loc(#10203)/ycoor)]|[u(#2159/zone_map)],|)
+&fun_plot_display_fold #5001=letq(0,vadd(first(%0,|),%1),%q0|[u(fun_draw_at_xy_offset_char,rest(%0,|),%q0,fun_dspace_offset,ansi(hr,@))])
+
+&fun_plot_expand #5001=squish(regeditall(%0,(\[A-Z\]+)(\\d+),repeat(%b$1,$2)))
+&fun_direction_to_vector #5001=switch(%0,N,0 1,NE,1 1,E,1 0,SE,1 -1,S,0 -1,SW,-1 -1,W,-1 0,NW,-1 1,#-1)
+
+@@ (XCOOR + 20) = XDRAW   &&  (YCOOR - 50) * -1 = YDRAW
+&fun_dspace_offset #5001=vmul(vadd(%0,21 -49),1 -1)
+&fun_draw_at_xy_offset #5001=u(fun_draw_at_xy,%0,u(%2,%1))
+&fun_draw_at_xy_offset_char #5001=u(fun_draw_at_xy_char,%0,u(%2,%1),%3)
+&fun_draw_at_xy #5001=u(fun_draw_at_xy_char,%0,%1,ansi(h,mid(%0,add(first(%1),mul(elements(%1,2),inc(strlen(first(rest(%0,%r),%r))))),1)))
+&fun_draw_at_xy_char #5001=strreplace(%0,add(first(%1),mul(elements(%1,2),inc(strlen(first(rest(%0,%r),%r))))),1,%2)
+
+
+
+@@ Plot saving
+&cmd_plot_save #5001=$:
+&optimize #5001=revwords(fold(optimize_fold,%0))
+&optimize_Fold #5001=regediti(first(%0)/%1,^(\[A-Z\]+)(\\d+)/(\[A-Z\]+)(\\d+)$,ifelse(strmatch($1,$3),$1[add($2,$4)] [rest(%0)],$3$4 %0))
+
+
+@@ Movement
+&control_start #10203=&path_loaded me=%0;&state me=Running;@ahear me=;@include me/msg_start;@include me/movement_loop=%0,0
+&movement_loop #10203=&last_room me=loc(me);GO u(fun_next_direction,%0);@retry cand(lt(%1,v(VAR_LIMIT_PER_CYCLE)),setr(0,u(fun_eat_direction,%0)),strmatch(v(state),Running),comp(v(last_room),loc(me),D))=%q0,inc(%1);@break cand(t(%q0),strmatch(v(state),Running),comp(v(last_room),loc(me),D))={@trigger me/movement_loop=%q0,0};@include me/control_stop;@break cand(t(%q0),strmatch(v(state),Running))={&state me=Collision;@include me/msg_collision}
+&control_stop #10203=&state me=Stopped;dolook;@include me/msg_stop
+&fun_next_direction #10203=regedit(first(%0),^(\[A-Z\]+)\\d+,$1)
+&fun_eat_direction #10203=regedit(%0,^(\[A-Z\]+)(\\d+)(\\s?),ifelse(eq(dec($2),0),,$1[dec($2)]$3))
+&var_LIMIT_PER_CYCLE #10203=5
+
+
+&msg_collision #10203=@zemit/silent #5020=The vessel cannot proceed further.
+&msg_stop #10203=@zemit/silent #5020=The vessel comes to a stop.
+&msg_start #10203=@zemit/silent #5020=The vessel begins moving.
+
+
+PLOTTED_PATH [#9862$]: E4 SE10 E14 E7 E4 NE3 NE1 N5
+
+
+
+@@ Help
+&cmd_help
