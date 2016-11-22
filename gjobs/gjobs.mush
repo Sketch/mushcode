@@ -214,43 +214,46 @@
 @@ Assumption: You are a wizard
 @@ Reminder Groups Add/See/Mod
 @@ &jobs Jobs=@@ Format: &jobs`<id>_<caption|data|text> ; @@ &jobs`<id>_data =group_id|owner|ctime|...
+
 &groups_Cool_Kids_Club Jobs=Cool Kids Club|0|0|0|Nobody is cool enough.
-&groups_Building_Board Jobs=Building Board|1|1|[strmatch(#-1,%0)]|Build requests go here.
-&groups_Admin Jobs=Admin Board|[orflags(%0,Wr)]|[orflags(%0,Wr)]|[orflags(%0,Wr)]|Admin only.
-&jobs`2_caption Jobs=Wait What
-&jobs`2_data Jobs=COOL_KIDS_CLUB|#555:123|Fake Date Data
-&jobs`2_text Jobs=How'd this even get here, dude?
-&jobs`q1_caption Jobs=A Golden Castle
-&jobs`q1_data Jobs=BUILDING_BOARD|#24:123|Fake Date Data
-&jobs`q1_text Jobs=Please build Sneaker a golden castle off of Main and Oak street. Thank you!
-&jobs`t5_caption Jobs=Yveltal Road
-&jobs`t5_data Jobs=BUILDING_BOARD|#5:123|Fake Date Data
-&jobs`t5_text Jobs=Hey, could somebody finish building Yveltal Road off the Ashen Valley?
-&jobs`aa_caption Jobs=ROFL proposal
-&jobs`aa_data Jobs=ADMIN|#5:123|Fake Date Data
-&jobs`aa_text Jobs=Wow guyz check out this awesome link: https://example.com
-&jobs`kk_caption Jobs=Theme change proposal
-&jobs`kk_data Jobs=ADMIN|#5:123|Fake Date Data
-&jobs`kk_text Jobs=Remove Spirit-Type. Keep Ghost. What do you think? --A
+&groups_Yolo_Board Jobs=Building Board|1|1|[strmatch(#-1,%0)]|YOLO so request a mansion.
+&groups_Tadmin Jobs=Admin Board|[orflags(%0,Wr)]|[orflags(%0,Wr)]|[orflags(%0,Wr)]|Admin only.
+&jobs`test_2_caption Jobs=Wait What
+&jobs`test_2_data Jobs=COOL_KIDS_CLUB|#555:123|Fake Date Data
+&jobs`test_2_text Jobs=How'd this even get here, dude?
+&jobs`test_q1_caption Jobs=A Golden Castle
+&jobs`test_q1_data Jobs=YOLO_BOARD|#24:123|Fake Date Data
+&jobs`test_q1_text Jobs=Please build Sneaker a golden castle off of Main and Oak street. Thank you!
+&jobs`test_t5_caption Jobs=Yveltal Road
+&jobs`test_t5_data Jobs=YOLO_BOARD|#5:123|Fake Date Data
+&jobs`test_t5_text Jobs=Hey, could somebody finish building Yveltal Road off the Ashen Valley?
+&jobs`test_aa_caption Jobs=ROFL proposal
+&jobs`test_aa_data Jobs=TADMIN|#5:123|Fake Date Data
+&jobs`test_aa_text Jobs=Wow guyz check out this awesome link: https://example.com
+&jobs`test_kk_caption Jobs=Theme change proposal
+&jobs`test_kk_data Jobs=TADMIN|#5:123|Fake Date Data
+&jobs`test_kk_text Jobs=Remove Spirit-Type. Keep Ghost. What do you think? --A
 
 
 &kilt Jobs=$KILT *:@@ Stub
 KILT START
 @@ Groups API
 KILT None=u(jobs/db_retrieve_group,%#,Spacejam)
-KILT List%rADMIN|Admin Board|1|1|1|Admin Only.%rBUILDING_BOARD|Building Board|1|1|0|Build requests go here.=u(jobs/db_retrieve_group,%#,Board)
-KILT List%rADMIN|Admin Board|1|1|1|Admin Only.%rBUILDING_BOARD|Building Board|1|1|0|Build requests go here.=u(jobs/db_retrieve_group,%#,)
+KILT List%rTADMIN|Admin Board|1|1|1|Admin Only.%rYOLO_BOARD|Building Board|1|1|0|YOLO so request a mansion
+KILT List%rTADMIN|Admin Board|1|1|1|Admin Only.%rYOLO_BOARD|Building Board|1|1|0|YOLO so request a mansion
 @@ Jobs API
-KILT JOBS`2_CAPTION%rJOBS`AA_CAPTION%rJOBS`KK_CAPTION=u(jobs/db__get_job_caption_attrs_from_group_datas,ADMIN%RCOOL_KIDS_CLUB)
+KILT JOBS`TEST_2_CAPTION%rJOBS`TEST_AA_CAPTION%rJOBS`TEST_KK_CAPTION=u(jobs/db__get_job_caption_attrs_from_group_datas,TADMIN%RCOOL_KIDS_CLUB)
 KILT None=u(jobs/db_retrieve_job,%#,BogusText)
-KILT List%rADMIN|Admin Board|#5:123|Fake Date Data|ROFL proposal%rADMIN|Admin Board|#5:123|Fake Date Data|Theme change proposal=u(jobs/db_retrieve_job,%#,admin/Proposal)
-KILT JOBS`AA_CAPTION=u(jobs/db__filter_by_job_caption,JOBS`AA_CAPTION%rJOBS`KK_CAPTION,ROFL)
+KILT List%rTADMIN|Admin Board|#5:123|Fake Date Data|ROFL proposal%rTADMIN|Admin Board|#5:123|Fake Date Data|Theme change proposal=u(jobs/db_retrieve_job,%#,admin/Proposal)
+KILT JOBS`TEST_AA_CAPTION=u(jobs/db__filter_by_job_caption,JOBS`TEST_AA_CAPTION%rJOBS`TEST_KK_CAPTION,ROFL)
 
-KILT Details%rAdmin Board%rTheme change proposal%rADMIN|#5:123|Fake Date Data%rRemove Spirit-Type. Keep Ghost. What do you think? --A=u(jobs/db_retrieve_job,%#,admin/Theme)
+KILT Details%rAdmin Board%rTheme change proposal%rTADMIN|#5:123|Fake Date Data%rRemove Spirit-Type. Keep Ghost. What do you think? --A=u(jobs/db_retrieve_job,%#,admin/Theme)
 
 KILT CHECK
 
-@wipe Jobs/groups_*
-@wipe Jobs/jobs`*
+@wipe Jobs/groups_cool_kids_club
+@wipe Jobs/groups_Yolo_Board
+@wipe Jobs/groups_TAdmin
+@wipe Jobs/jobs`TEST_*
 @wipe Jobs/kilt
 
