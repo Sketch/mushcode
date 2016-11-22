@@ -161,17 +161,20 @@
 @@       list format is: DATA(groupname as 2nd element)|CAPTION
 @@   2b. if 'Details' the details for that single job ref.
 @@       detail format is: GROUPNAME%rCAPTION%rDATA%rTEXT
-&db_retrieve_job Jobs=u(db__retrieve_job_step_2,%0,switch(%1,*/*,after(%1,/),%1),rest(u(db_retrieve_group,%0,switch(%1,*/*,before(%1,/),,)),%r))
+&db_retrieve_job Jobs=u(db__retrieve_job_step_2,%0,u(db__retrieve_job_attrs,%0,switch(%1,*/*,after(%1,/),%1),rest(u(db_retrieve_group,%0,switch(%1,*/*,before(%1,/),,)),%r)))
 
-@@ As %0, list all jobs matching %1 of visible group-data %2
-&db__retrieve_job_step_2 Jobs=switch(%2,,None, u(db__retrieve_job_step_3, %0, u(db__filter_by_job_caption,u(db__get_job_caption_attrs_from_group_datas,%2),%1)))
+@@ Regardless of enactor, list all job attrs matching job name %1 of visible group-data %2. %2 may be empty.
+&db__retrieve_job_attrs Jobs=u(db__filter_by_job_caption,u(db__get_job_caption_attrs_from_group_datas,%2),%1)
 
+@@ %0 is groupdatas, which have ID as their first element.
 &db__get_job_caption_attrs_from_group_datas Jobs=edit(regrep(me,jobs`*_DATA,u(db__jobs_regexp,%0)),_DATA,_CAPTION,%b,%r)
 &db__jobs_regexp Jobs=^\([edit(map(db__first_element_mapper,%0,%r),%r,|)]\)\\|
 
 @@ %0 - job`<id>_CAPTION %r-list. %1-JobName
 &db__filter_by_job_caption Jobs=elements(%0,u(db__exact_first_or_matching_inner,iter(%0,first(v(##),|),%r,%r),%1),%r,%r)
 
+@@ As %0, list or detail all job-attrs specified in %1.
+&db__retrieve_job_step_2 Jobs=switch(%1,,None, u(db__retrieve_job_step_3, %0, %1))
 &db__retrieve_job_step_3 Jobs=switch(words(%1,%r),>1,List%r[u(db__mix_job_data,%0,%1)],0,None,1,Details%r[u(db__detail_data,%0,%1)]
 &db__mix_job_data Jobs=mix(db__mix_job_data_mixer,regeditall(%1,.+,%0),edit(%1,_CAPTION,_DATA),%1,%r)
 &db__mix_job_data_mixer Jobs=[insert(v(%1),2,u(db__get_groupname_for_jobattr,%0,%1),|)]|[v(%2)]
